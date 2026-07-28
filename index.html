@@ -1572,7 +1572,7 @@
         : tree.map((t, ti) => renderTujuanNode(t, `t${ti}`, forceOpen, isKetua)).join("");
 
       return `
-    ${sectionHead("Rencana Kerja", "Tujuan, Sasaran, IKU, Kegiatan &amp; Sub Kegiatan", "Struktur ini mengikuti dokumen rencana kinerja resmi. " + (isKetua ? "Buka hingga Sub Kegiatan untuk menambahkan Aktivitas dan menentukan targetnya." : "Buka hingga Sub Kegiatan untuk melihat aktivitas yang ditugaskan kepada Anda."))}
+    ${sectionHead("Rencana Kerja", "Tujuan, Sasaran, IKU, Kegiatan & Sub Kegiatan", "Struktur ini mengikuti dokumen rencana kinerja resmi. " + (isKetua ? "Buka hingga Sub Kegiatan untuk menambahkan Aktivitas dan menentukan targetnya." : "Buka hingga Sub Kegiatan untuk melihat aktivitas yang ditugaskan kepada Anda."))}
     <div class="field" style="max-width:420px">
       <input class="input" id="tree-search" placeholder="Cari kegiatan atau sub kegiatan\u2026" value="${esc(STATE.searchTree)}">
     </div>
