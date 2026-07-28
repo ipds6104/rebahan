@@ -1540,7 +1540,11 @@
     }
 
     function renderDashboard() {
-      const isKetua = CURRENT_USER.role === "ketua_tim" || CURRENT_USER.role === "admin";
+      const role = CURRENT_USER.role;
+      const isKetua = role === "ketua_tim" || role === "admin";
+      const isPenilai = role === "penilai";
+      const isPegawai = role === "pegawai";
+
       const totalAktivitas = DATA.aktivitas.length;
       const totalTarget = DATA.aktivitas.reduce((s, a) => s + (Number(a.target) || 0), 0);
       const totalCapaian = DATA.laporan.reduce((s, l) => s + (Number(l.capaian) || 0), 0);
@@ -1548,13 +1552,196 @@
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const laporanMingguIni = DATA.laporan.filter(l => l.createdAt >= weekAgo).length;
 
-      if (totalAktivitas === 0) {
+      if (totalAktivitas === 0 && !isPenilai) {
         return sectionHead("Ringkasan", "Dasbor Kinerja") + emptyState(
           isKetua ? "Belum ada rencana aktivitas" : "Belum ada aktivitas yang ditugaskan",
           isKetua ? "Buka tab 'Rencana & Aktivitas' untuk menyusun aktivitas berdasarkan Tujuan, Sasaran, IKU, Kegiatan, dan Sub Kegiatan." : "Hubungi Ketua Tim untuk penugasan aktivitas."
         );
       }
 
+      /* ── Stats cards ── */
+      const statsHtml = `
+        <div class="grid-stats">
+          <div class="stat-card"><div class="stat-label">Total Aktivitas</div><div class="stat-value">${totalAktivitas}</div><div class="stat-sub">seluruh rencana kerja tim</div></div>
+          <div class="stat-card accent"><div class="stat-label">Capaian Keseluruhan</div><div class="stat-value">${overallPct}%</div><div class="stat-sub">${totalCapaian} dari ${totalTarget} target</div></div>
+          <div class="stat-card"><div class="stat-label">Laporan 7 Hari Terakhir</div><div class="stat-value">${laporanMingguIni}</div><div class="stat-sub">laporan harian masuk</div></div>
+          <div class="stat-card"><div class="stat-label">Anggota Tim</div><div class="stat-value">${DATA.users.length}</div><div class="stat-sub">${DATA.users.filter(u => u.role === 'ketua_tim').length} ketua tim &middot; ${DATA.users.filter(u => u.role === 'pegawai').length} pegawai</div></div>
+        </div>`;
+
+      /* ── Pegawai: My Tasks widget ── */
+      let myTasksWidget = "";
+      if (isPegawai) {
+        const nowMonth = new Date().toISOString().slice(0, 7);
+        const myAktivitas = DATA.aktivitas.filter(a => (a.assignedTo || []).includes(CURRENT_USER.id));
+        const isSubmitted = (DATA.pengajuan || []).some(p => p.pegawaiId === CURRENT_USER.id && p.bulan === nowMonth && p.status === "diajukan");
+        const hasPenilaian = (DATA.penilaian || []).some(p => p.pegawaiId === CURRENT_USER.id && p.bulan === nowMonth);
+
+        const submissionBadge = isSubmitted
+          ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:#D1FAE5;color:#065F46">${icon("lock")} Laporan ${fmtMonth(nowMonth)} Sudah Dikunci</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:#FEF3C7;color:#92400E">${icon("lock-open")} Laporan ${fmtMonth(nowMonth)} Belum Dikunci</span>`;
+
+        const penilaianBadge = hasPenilaian
+          ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:#DBEAFE;color:#1E40AF">${icon("star")} Sudah Dinilai Bulan Ini</span>`
+          : "";
+
+        if (myAktivitas.length === 0) {
+          myTasksWidget = `
+            <div class="panel" style="border-left:4px solid var(--color-primary)">
+              <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <h3 class="panel-title">${icon("user-round")} Tugas Saya</h3>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">${submissionBadge}${penilaianBadge}</div>
+              </div>
+              <div class="empty-row" style="padding:20px 0;text-align:center">
+                ${icon("inbox")}
+                <div style="margin-top:8px;font-size:13px;color:var(--color-text-muted)">Belum ada aktivitas yang ditugaskan ke Anda.</div>
+                <div style="margin-top:4px;font-size:12px;color:var(--color-text-muted)">Hubungi Ketua Tim untuk mendapatkan penugasan.</div>
+              </div>
+            </div>`;
+        } else {
+          const myTaskRows = myAktivitas.map(a => {
+            const prog = computeProgress(a.id);
+            const myLapCount = DATA.laporan.filter(l => l.pegawaiId === CURRENT_USER.id && l.aktivitasId === a.id).length;
+            const urgencyColor = prog.percent === 100 ? "#2F7A50" : prog.percent >= 50 ? "#B7791F" : "#C0392B";
+            const statusIcon = prog.percent === 100 ? "circle-check-big" : prog.percent > 0 ? "loader" : "circle-dashed";
+            return `
+              <div style="padding:12px 0;border-bottom:1px solid var(--color-border);display:flex;align-items:flex-start;gap:12px">
+                <div style="flex-shrink:0;margin-top:2px;color:${urgencyColor}">${icon(statusIcon)}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:13px;color:var(--color-text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.nama)}">${esc(a.nama)}</div>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    ${progressBar(prog.percent)}
+                  </div>
+                </div>
+                <div style="flex-shrink:0;text-align:right">
+                  <div style="font-size:13px;font-weight:700;color:${urgencyColor}">${prog.percent}%</div>
+                  <div style="font-size:11px;color:var(--color-text-muted)">${myLapCount} laporan</div>
+                </div>
+              </div>`;
+          }).join("");
+
+          const doneCount = myAktivitas.filter(a => computeProgress(a.id).percent >= 100).length;
+          myTasksWidget = `
+            <div class="panel" style="border-left:4px solid var(--color-primary)">
+              <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <h3 class="panel-title">${icon("user-round")} Tugas Saya
+                  <span style="margin-left:8px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${doneCount === myAktivitas.length ? '#D1FAE5' : '#EFF6FF'};color:${doneCount === myAktivitas.length ? '#065F46' : '#1E40AF'}">${doneCount}/${myAktivitas.length} selesai</span>
+                </h3>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">${submissionBadge}${penilaianBadge}</div>
+              </div>
+              ${myTaskRows}
+              ${doneCount === myAktivitas.length ? `<div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:#D1FAE5;color:#065F46;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px">${icon("party-popper")} Semua aktivitas Anda sudah mencapai 100%! Jangan lupa kunci dan ajukan laporan bulan ini.</div>` : ""}
+            </div>`;
+        }
+      }
+
+      /* ── Ketua Tim / Admin widgets ── */
+      let ketuaWidgets = "";
+      if (isKetua) {
+        // Widget 1: Aktivitas belum ditugaskan
+        const unassigned = DATA.aktivitas.filter(a => !a.assignedTo || a.assignedTo.length === 0);
+        const unassignedHtml = unassigned.length === 0
+          ? `<div style="padding:16px 0;text-align:center">
+               <div style="color:var(--color-success);font-size:28px;line-height:1">✅</div>
+               <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--color-success)">Semua aktivitas sudah ditugaskan!</div>
+             </div>`
+          : unassigned.slice(0, 5).map(a => `
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border)">
+                <div style="flex-shrink:0;color:var(--color-danger)">${icon("triangle-alert")}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.nama)}">${esc(a.nama)}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted)">${esc(a.satuan || "")} &middot; target: ${a.target || "—"}</div>
+                </div>
+                <button class="btn-ghost" style="font-size:11px;padding:4px 10px;flex-shrink:0" data-action="set-tab" data-id="aktivitas">${icon("user-plus")} Tugaskan</button>
+              </div>`).join("") +
+            (unassigned.length > 5 ? `<div style="font-size:12px;color:var(--color-text-muted);text-align:center;padding-top:10px">+${unassigned.length - 5} aktivitas lainnya belum ditugaskan</div>` : "");
+
+        const unassignedBadge = unassigned.length > 0
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEE2E2;color:#991B1B">${unassigned.length} belum ditugaskan</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#D1FAE5;color:#065F46">Semua tertugaskan ✓</span>`;
+
+        // Widget 2: Pegawai menunggu penilaian bulan ini
+        const nowMonth = new Date().toISOString().slice(0, 7);
+        const allPegawai = DATA.users.filter(u => u.role === "pegawai");
+        const alreadyRated = new Set((DATA.penilaian || []).filter(p => p.bulan === nowMonth).map(p => p.pegawaiId));
+        const submitted = (DATA.pengajuan || []).filter(p => p.bulan === nowMonth && p.status === "diajukan").map(p => p.pegawaiId);
+        const waitingRating = submitted.filter(id => !alreadyRated.has(id));
+        const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(Boolean);
+
+        const waitingHtml = waitingUsers.length === 0
+          ? `<div style="padding:16px 0;text-align:center">
+               <div style="color:var(--color-primary);font-size:28px;line-height:1">🏅</div>
+               <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--color-text-muted)">Tidak ada laporan yang menunggu penilaian.</div>
+             </div>`
+          : waitingUsers.slice(0, 5).map(u => `
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border)">
+                <div class="avatar" style="background:var(--color-accent);width:34px;height:34px;font-size:14px;font-weight:700;flex-shrink:0">${esc(u.nama.slice(0,1).toUpperCase())}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12.5px;font-weight:600">${esc(u.nama)}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted)">Laporan ${fmtMonth(nowMonth)} sudah dikunci &middot; menunggu penilaian</div>
+                </div>
+                <button class="btn-ghost" style="font-size:11px;padding:4px 10px;flex-shrink:0" data-action="set-tab" data-id="penilaian">${icon("award")} Nilai</button>
+              </div>`).join("") +
+            (waitingUsers.length > 5 ? `<div style="font-size:12px;color:var(--color-text-muted);text-align:center;padding-top:10px">+${waitingUsers.length - 5} pegawai lainnya menunggu penilaian</div>` : "");
+
+        const waitingBadge = waitingUsers.length > 0
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E">${waitingUsers.length} menunggu penilaian</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#D1FAE5;color:#065F46">Semua sudah dinilai ✓</span>`;
+
+        ketuaWidgets = `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start" class="dash-grid-action">
+            <div class="panel" style="border-left:4px solid var(--color-danger)">
+              <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center">
+                <h3 class="panel-title">${icon("user-plus")} Aktivitas Belum Ditugaskan</h3>
+                ${unassignedBadge}
+              </div>
+              ${unassignedHtml}
+            </div>
+            <div class="panel" style="border-left:4px solid var(--color-warning)">
+              <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center">
+                <h3 class="panel-title">${icon("award")} Menunggu Penilaian</h3>
+                ${waitingBadge}
+              </div>
+              ${waitingHtml}
+            </div>
+          </div>
+          <style>@media(max-width:900px){.dash-grid-action{grid-template-columns:1fr !important}}</style>`;
+      }
+
+      /* ── Penilai: pending review widget ── */
+      let penilaiWidget = "";
+      if (isPenilai) {
+        const nowMonth = new Date().toISOString().slice(0, 7);
+        const alreadyRated = new Set((DATA.penilaian || []).filter(p => p.bulan === nowMonth).map(p => p.pegawaiId));
+        const submitted = (DATA.pengajuan || []).filter(p => p.bulan === nowMonth && p.status === "diajukan").map(p => p.pegawaiId);
+        const waitingRating = submitted.filter(id => !alreadyRated.has(id));
+        const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(Boolean);
+
+        const waitingHtml = waitingUsers.length === 0
+          ? `<div style="padding:20px 0;text-align:center">
+               <div style="color:var(--color-primary);font-size:32px;line-height:1">🏅</div>
+               <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--color-success)">Tidak ada laporan yang menunggu penilaian Anda.</div>
+             </div>`
+          : waitingUsers.map(u => `
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border)">
+                <div class="avatar" style="background:var(--color-accent);width:34px;height:34px;font-size:14px;font-weight:700;flex-shrink:0">${esc(u.nama.slice(0,1).toUpperCase())}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">${esc(u.nama)}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted)">Laporan ${fmtMonth(nowMonth)} sudah dikunci &middot; menunggu penilaian</div>
+                </div>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;flex-shrink:0" data-action="set-tab" data-id="penilaian">${icon("award")} Nilai Sekarang</button>
+              </div>`).join("");
+
+        penilaiWidget = `
+          <div class="panel" style="border-left:4px solid var(--color-warning)">
+            <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center">
+              <h3 class="panel-title">${icon("award")} Laporan Menunggu Penilaian Anda</h3>
+              ${waitingUsers.length > 0 ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E">${waitingUsers.length} laporan</span>` : ""}
+            </div>
+            ${waitingHtml}
+          </div>`;
+      }
+
+      /* ── Bottom panels (attention + contribution) — shown for ketua/admin/penilai ── */
       const pegawaiStats = DATA.users.filter(u => u.role === "pegawai").map(u => {
         const laps = DATA.laporan.filter(l => l.pegawaiId === u.id);
         const total = laps.reduce((s, l) => s + (Number(l.capaian) || 0), 0);
@@ -1566,42 +1753,43 @@
         .sort((a, b) => a.percent - b.percent)
         .slice(0, 6);
 
+      const bottomPanels = (isKetua || isPenilai) ? `
+        <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start" class="dash-grid">
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">Aktivitas Perlu Perhatian</h3></div>
+            ${perluPerhatian.length === 0 ? `<div class="empty-row">Semua aktivitas sudah mencapai 100%.</div>` :
+              perluPerhatian.map(x => `
+              <div style="margin-bottom:13px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12.5px;gap:8px">
+                  <span style="font-weight:600">${esc(x.a.nama)}</span>
+                  <span style="color:var(--color-text-muted);flex-shrink:0">${x.percent}%</span>
+                </div>
+                ${progressBar(x.percent)}
+              </div>`).join("")}
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3 class="panel-title">Kontribusi Pegawai</h3></div>
+            ${pegawaiStats.length === 0 ? `<div class="empty-row">Belum ada pegawai.</div>` :
+              pegawaiStats.map(x => `
+              <div class="person-row">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="avatar">${esc(x.u.nama.slice(0, 1).toUpperCase())}</div>
+                  <div><div class="person-name">${esc(x.u.nama)}</div><div class="person-meta">${x.count} laporan</div></div>
+                </div>
+                <div style="font-weight:700;color:var(--color-primary);font-size:13px">${x.total}</div>
+              </div>`).join("")}
+          </div>
+        </div>
+        <style>@media(max-width:900px){.dash-grid{grid-template-columns:1fr !important}}</style>` : "";
+
       return `
-    ${sectionHead("Ringkasan", "Dasbor Kinerja")}
-    <div class="grid-stats">
-      <div class="stat-card"><div class="stat-label">Total Aktivitas</div><div class="stat-value">${totalAktivitas}</div><div class="stat-sub">seluruh rencana kerja tim</div></div>
-      <div class="stat-card accent"><div class="stat-label">Capaian Keseluruhan</div><div class="stat-value">${overallPct}%</div><div class="stat-sub">${totalCapaian} dari ${totalTarget} target</div></div>
-      <div class="stat-card"><div class="stat-label">Laporan 7 Hari Terakhir</div><div class="stat-value">${laporanMingguIni}</div><div class="stat-sub">laporan harian masuk</div></div>
-      <div class="stat-card"><div class="stat-label">Anggota Tim</div><div class="stat-value">${DATA.users.length}</div><div class="stat-sub">${DATA.users.filter(u => u.role === 'ketua_tim').length} ketua tim &middot; ${DATA.users.filter(u => u.role === 'pegawai').length} pegawai</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start" class="dash-grid">
-      <div class="panel">
-        <div class="panel-head"><h3 class="panel-title">Aktivitas Perlu Perhatian</h3></div>
-        ${perluPerhatian.length === 0 ? `<div class="empty-row">Semua aktivitas sudah mencapai 100%.</div>` :
-          perluPerhatian.map(x => `
-          <div style="margin-bottom:13px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12.5px;gap:8px">
-              <span style="font-weight:600">${esc(x.a.nama)}</span>
-              <span style="color:var(--color-text-muted);flex-shrink:0">${x.percent}%</span>
-            </div>
-            ${progressBar(x.percent)}
-          </div>`).join("")}
-      </div>
-      <div class="panel">
-        <div class="panel-head"><h3 class="panel-title">Kontribusi Pegawai</h3></div>
-        ${pegawaiStats.length === 0 ? `<div class="empty-row">Belum ada pegawai.</div>` :
-          pegawaiStats.map(x => `
-          <div class="person-row">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="avatar">${esc(x.u.nama.slice(0, 1).toUpperCase())}</div>
-              <div><div class="person-name">${esc(x.u.nama)}</div><div class="person-meta">${x.count} laporan</div></div>
-            </div>
-            <div style="font-weight:700;color:var(--color-primary);font-size:13px">${x.total}</div>
-          </div>`).join("")}
-      </div>
-    </div>
-    <style>@media(max-width:900px){.dash-grid{grid-template-columns:1fr !important}}</style>
-  `;
+        ${sectionHead("Ringkasan", "Dasbor Kinerja")}
+        ${statsHtml}
+        ${myTasksWidget}
+        ${ketuaWidgets}
+        ${penilaiWidget}
+        ${bottomPanels}
+      `;
     }
 
     function filterTree(query) {
