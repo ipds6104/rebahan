@@ -1,5 +1,5 @@
 # 📘 Panduan Alur Kerja Aplikasi Manajemen Kinerja Tim
-### BPS Kabupaten Puncak
+### BPS Kabupaten Mempawah
 
 Dokumen ini menjelaskan alur kerja dari perencanaan aktivitas, pelaporan harian oleh pegawai, penguncian bulanan, hingga penilaian bulanan (Kinerja & BerAKHLAK) oleh penilai.
 

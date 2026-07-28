@@ -1,6 +1,6 @@
 /* =====================================================================
    Code.gs — Backend Google Apps Script
-   Manajemen Kinerja Tim — BPS Kabupaten Puncak
+   Manajemen Kinerja Tim — BPS Kabupaten Mempawah
 
    Spreadsheet tabs:
      • Users     : id | nama | role | passwordHash | salt | createdAt
