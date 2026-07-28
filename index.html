@@ -276,6 +276,8 @@
       border: 1px solid var(--color-border);
       border-radius: 12px;
       padding: 18px;
+      display: flex;
+      flex-direction: column;
     }
 
     .panel-head {
@@ -1586,12 +1588,12 @@
 
         if (myAktivitas.length === 0) {
           myTasksWidget = `
-            <div class="panel" style="border-left:4px solid var(--color-primary)">
+            <div class="panel" style="border-left:4px solid var(--color-primary);margin-bottom:20px">
               <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                 <h3 class="panel-title">${icon("user-round")} Tugas Saya</h3>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">${submissionBadge}${penilaianBadge}</div>
               </div>
-              <div class="empty-row" style="padding:20px 0;text-align:center">
+              <div class="empty-row" style="padding:24px 0;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
                 ${icon("inbox")}
                 <div style="margin-top:8px;font-size:13px;color:var(--color-text-muted)">Belum ada aktivitas yang ditugaskan ke Anda.</div>
                 <div style="margin-top:4px;font-size:12px;color:var(--color-text-muted)">Hubungi Ketua Tim untuk mendapatkan penugasan.</div>
@@ -1621,7 +1623,7 @@
 
           const doneCount = myAktivitas.filter(a => computeProgress(a.id).percent >= 100).length;
           myTasksWidget = `
-            <div class="panel" style="border-left:4px solid var(--color-primary)">
+            <div class="panel" style="border-left:4px solid var(--color-primary);margin-bottom:20px">
               <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                 <h3 class="panel-title">${icon("user-round")} Tugas Saya
                   <span style="margin-left:8px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${doneCount === myAktivitas.length ? '#D1FAE5' : '#EFF6FF'};color:${doneCount === myAktivitas.length ? '#065F46' : '#1E40AF'}">${doneCount}/${myAktivitas.length} selesai</span>
@@ -1640,7 +1642,7 @@
         // Widget 1: Aktivitas belum ditugaskan
         const unassigned = DATA.aktivitas.filter(a => !a.assignedTo || a.assignedTo.length === 0);
         const unassignedHtml = unassigned.length === 0
-          ? `<div style="padding:16px 0;text-align:center">
+          ? `<div style="padding:24px 0;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
                <div style="color:var(--color-success);font-size:28px;line-height:1">✅</div>
                <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--color-success)">Semua aktivitas sudah ditugaskan!</div>
              </div>`
@@ -1668,7 +1670,7 @@
         const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(Boolean);
 
         const waitingHtml = waitingUsers.length === 0
-          ? `<div style="padding:16px 0;text-align:center">
+          ? `<div style="padding:24px 0;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
                <div style="color:var(--color-primary);font-size:28px;line-height:1">🏅</div>
                <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--color-text-muted)">Tidak ada laporan yang menunggu penilaian.</div>
              </div>`
@@ -1688,7 +1690,7 @@
           : `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#D1FAE5;color:#065F46">Semua sudah dinilai ✓</span>`;
 
         ketuaWidgets = `
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start" class="dash-grid-action">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" class="dash-grid-action">
             <div class="panel" style="border-left:4px solid var(--color-danger)">
               <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center">
                 <h3 class="panel-title">${icon("user-plus")} Aktivitas Belum Ditugaskan</h3>
@@ -1717,7 +1719,7 @@
         const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(Boolean);
 
         const waitingHtml = waitingUsers.length === 0
-          ? `<div style="padding:20px 0;text-align:center">
+          ? `<div style="padding:24px 0;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
                <div style="color:var(--color-primary);font-size:32px;line-height:1">🏅</div>
                <div style="margin-top:8px;font-size:13px;font-weight:600;color:var(--color-success)">Tidak ada laporan yang menunggu penilaian Anda.</div>
              </div>`
@@ -1732,7 +1734,7 @@
               </div>`).join("");
 
         penilaiWidget = `
-          <div class="panel" style="border-left:4px solid var(--color-warning)">
+          <div class="panel" style="border-left:4px solid var(--color-warning);margin-bottom:20px">
             <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center">
               <h3 class="panel-title">${icon("award")} Laporan Menunggu Penilaian Anda</h3>
               ${waitingUsers.length > 0 ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:#FEF3C7;color:#92400E">${waitingUsers.length} laporan</span>` : ""}
