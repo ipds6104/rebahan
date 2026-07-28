@@ -1082,6 +1082,59 @@
       .user-pick-grid {
         grid-template-columns: 1fr;
       }
+    /* Employee of the Month Running Ticker Banner */
+    .eotm-ticker-container {
+      background: linear-gradient(90deg, var(--color-primary-light) 0%, var(--color-primary) 50%, var(--color-primary-light) 100%);
+      border-bottom: 2px solid #F59E0B;
+      color: #FFFFFF;
+      overflow: hidden;
+      white-space: nowrap;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+      padding-left: 130px;
+    }
+    
+    .eotm-ticker-container::before {
+      content: "⭐ APRESIASI";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      background: #F59E0B;
+      color: #0F172A;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
+      z-index: 12;
+      letter-spacing: 0.05em;
+    }
+
+    .eotm-ticker-track {
+      display: inline-block;
+      animation: eotm-marquee 30s linear infinite;
+    }
+    
+    .eotm-ticker-track:hover {
+      animation-play-state: paused;
+    }
+
+    .eotm-ticker-track span {
+      display: inline-block;
+      font-size: 12.5px;
+      font-family: var(--font-body);
+      padding-right: 80px;
+    }
+
+    @keyframes eotm-marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
   </style>
 </head>
@@ -1465,6 +1518,7 @@
     <nav class="tabs">
       ${NAV.map(n => `<button class="tab-btn ${STATE.tab === n.id ? "active" : ""}" data-action="set-tab" data-id="${n.id}">${icon(n.icon)} ${n.label}</button>`).join("")}
     </nav>
+    ${renderEotmTicker()}
     <main id="content"></main>
     <div id="modal-root"></div>
   `;
@@ -2366,6 +2420,39 @@
         ${heroCard}
         ${leaderboardTable}
         ${historySection}
+      `;
+    }
+
+    function renderEotmTicker() {
+      const now = new Date();
+      const months = [];
+      for (let i = 0; i < 3; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push(d.toISOString().slice(0, 7));
+      }
+      
+      const winners = [];
+      months.forEach(m => {
+        const res = getWinnerForMonth(m);
+        if (res) {
+          winners.push({ monthStr: fmtMonth(m), name: res.winner.user.nama, score: res.winner.score });
+        }
+      });
+      
+      if (winners.length === 0) return "";
+      
+      const tickerText = winners.map(w => {
+        return `🏆 <strong>Employee of The Month ${w.monthStr}</strong>: <span style="color:#FFF3E0;font-weight:600">${esc(w.name)}</span> (Skor Akhir: ${w.score}) 🎉`;
+      }).join(" &nbsp;&nbsp;&bull;&nbsp;&nbsp; ");
+      
+      const marqueeContent = `<span>${tickerText}</span><span>${tickerText}</span>`;
+      
+      return `
+        <div class="eotm-ticker-container">
+          <div class="eotm-ticker-track">
+            ${marqueeContent}
+          </div>
+        </div>
       `;
     }
 
