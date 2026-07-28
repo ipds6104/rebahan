@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Alur Kerja — Manajemen Kinerja Tim BPS Kabupaten Puncak</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --primary: #12335F;
+      --primary-light: #2C5490;
+      --accent: #C08A3E;
+      --success: #2F7A50;
+      --warning: #B7791F;
+      --danger: #C0392B;
+      --text: #1B2430;
+      --muted: #66748A;
+      --border: #E2E7EE;
+      --surface: #FFFFFF;
+      --bg: #F4F6F9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.7;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 60%, #1a4a7a 100%);
+      color: #fff;
+      padding: 72px 64px 64px;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    .cover::before {
+      content: "";
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      bottom: -80px; left: -40px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0F172A;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 28px;
+    }
+
+    .cover h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .cover-subtitle {
+      font-size: 17px;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 40px;
+    }
+
+    .cover-meta {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      padding-top: 28px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .cover-meta strong {
+      display: block;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    /* ── Content layout ── */
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 40px 80px;
+    }
+
+    /* ── Table of contents ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 48px;
+    }
+
+    .toc-title {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .toc ol {
+      padding-left: 20px;
+    }
+
+    .toc li {
+      font-size: 13.5px;
+      padding: 4px 0;
+      color: var(--muted);
+    }
+
+    .toc li a {
+      color: var(--primary-light);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 52px;
+      page-break-inside: avoid;
+    }
+
+    .section-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* ── Role table ── */
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .role-card {
+      border-radius: 10px;
+      padding: 16px 18px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .role-card .role-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .role-card .role-desc {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .badge-primary { background: #DBEAFE; color: #1E40AF; }
+    .badge-success { background: #D1FAE5; color: #065F46; }
+    .badge-warning { background: #FEF3C7; color: #92400E; }
+    .badge-accent  { background: #FEF9EC; color: #92400E; border: 1px solid var(--accent); }
+    .badge-muted   { background: #F1F5F9; color: #475569; }
+
+    /* ── Mermaid diagram ── */
+    .diagram-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── Steps ── */
+    .step-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .step-title {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 2px;
+    }
+
+    .step-by {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .step-section ol,
+    .step-section ul {
+      padding-left: 20px;
+    }
+
+    .step-section li {
+      font-size: 13px;
+      padding: 4px 0;
+      line-height: 1.6;
+    }
+
+    .step-section strong {
+      color: var(--primary);
+    }
+
+    .step-section code {
+      background: var(--bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--danger);
+    }
+
+    /* ── Note boxes ── */
+    .note {
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 12.5px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .note-icon { flex-shrink: 0; font-size: 16px; }
+
+    .note.warning { background: #FFFBEB; border-left: 4px solid #F59E0B; }
+    .note.success { background: #F0FDF4; border-left: 4px solid #22C55E; }
+    .note.info    { background: #EFF6FF; border-left: 4px solid #3B82F6; }
+    .note.danger  { background: #FEF2F2; border-left: 4px solid #EF4444; }
+
+    /* ── Status items ── */
+    .status-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 11.5px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+    }
+
+    /* ── Print overrides ── */
+    @media print {
+      body { background: #fff; }
+      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section, .step-section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ COVER PAGE ══════════ -->
+<div class="cover">
+  <div class="cover-badge">📘 Dokumen Resmi</div>
+  <h1>Panduan Alur Kerja<br>Manajemen Kinerja Tim</h1>
+  <p class="cover-subtitle">Sistem Pelaporan, Penguncian, dan Penilaian Bulanan BerAKHLAK ASN<br>Berbasis Google Sheets & Google Drive</p>
+  <div class="cover-meta">
+    <div><strong>Institusi</strong>BPS Kabupaten Puncak</div>
+    <div><strong>Versi Dokumen</strong>2.0 — Juli 2026</div>
+    <div><strong>Status</strong>Aktif Digunakan</div>
+  </div>
+</div>
+
+<!-- ══════════ CONTENT ══════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <div class="toc-title">📋 Daftar Isi</div>
+    <ol>
+      <li><a href="#roles">Hak Akses Berdasarkan Peran (Role)</a></li>
+      <li><a href="#diagram">Diagram Alur Kerja Lengkap</a></li>
+      <li><a href="#step1">Tahap 1 — Perencanaan</a></li>
+      <li><a href="#step2">Tahap 2 — Pelaporan & Penguncian</a></li>
+      <li><a href="#step3">Tahap 3 — Penilaian & Buka Kunci</a></li>
+      <li><a href="#step4">Tahap 4 — Umpan Balik Nilai</a></li>
+    </ol>
+  </div>
+
+  <!-- Section 1: Roles -->
+  <div class="section" id="roles">
+    <div class="section-eyebrow">Bagian 1</div>
+    <h2 class="section-title">👥 Hak Akses Berdasarkan Peran (Role)</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px">
+      Setiap pengguna di aplikasi memiliki peran yang menentukan fitur dan data yang dapat mereka akses. Berikut adalah deskripsi lengkap setiap peran:
+    </p>
+
+    <div class="role-grid">
+      <div class="role-card" style="border-left:4px solid var(--primary)">
+        <div class="role-title">
+          🛡️ Admin
+          <span class="badge badge-primary">Akses Penuh</span>
+        </div>
+        <div class="role-desc">Mengelola seluruh pengguna & peran. Memiliki semua hak akses Ketua Tim dan Penilai secara bersamaan. Dapat melakukan semua tindakan di seluruh menu aplikasi.</div>
+      </div>
+
+      <div class="role-card" style="border-left:4px solid #0288d1">
+        <div class="role-title">
+          👔 Ketua Tim
+          <span class="badge badge-muted">Delegasi Saja</span>
+        </div>
+        <div class="role-desc">Membuat rencana aktivitas kerja, menugaskan pegawai ke setiap aktivitas, dan memantau capaian progres tim secara keseluruhan. <strong>Tidak mendapat penugasan pribadi dan tidak dinilai.</strong></div>
+      </div>
+
+      <div class="role-card" style="border-left:4px solid var(--warning)">
+        <div class="role-title">
+          📊 Penilai
+          <span class="badge badge-warning">Evaluator</span>
+        </div>
+        <div class="role-desc">Melakukan penilaian bulanan (Kinerja & nilai BerAKHLAK ASN) khusus untuk pengguna dengan peran <strong>Pegawai</strong> yang sudah mengajukan dan mengunci laporan bulannya.</div>
+      </div>
+
+      <div class="role-card" style="border-left:4px solid var(--success)">
+        <div class="role-title">
+          🧑‍💼 Pegawai
+          <span class="badge badge-success">Pelapor</span>
+        </div>
+        <div class="role-desc">Melihat aktivitas yang ditugaskan, mengirim laporan harian beserta bukti dukung ke Google Drive, mengunci laporan bulanan, dan melihat hasil penilaian kinerja miliknya.</div>
+      </div>
+    </div>
+
+    <div class="role-card" style="margin-top:14px;border-left:4px solid var(--muted)">
+      <div class="role-title">⏳ Tamu <span class="badge badge-muted">Pending</span></div>
+      <div class="role-desc">Pengguna yang baru mendaftar secara mandiri. Tidak memiliki akses ke fitur apapun sampai Admin menetapkan peran yang sesuai.</div>
+    </div>
+  </div>
+
+  <!-- Section 2: Diagram -->
+  <div class="section" id="diagram">
+    <div class="section-eyebrow">Bagian 2</div>
+    <h2 class="section-title">📊 Diagram Alur Kerja Lengkap</h2>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:20px">
+      Diagram berikut menggambarkan keseluruhan alur dari perencanaan hingga umpan balik penilaian:
+    </p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph TD
+    A["👔 Ketua Tim / Admin"] -->|1. Buat Aktivitas & Tugaskan Pegawai| B[("📋 Database: Tab Aktivitas")]
+    B -->|2. Muncul di Daftar Aktivitas Pegawai| C["🧑‍💼 Pegawai"]
+    C -->|3. Kirim Laporan Harian & Capaian| D[("📁 Database: Tab Laporan")]
+    C -->|4. Unggah Bukti Dukung Berkas| E["☁️ Google Drive Folder"]
+    D -.->|Tautan Bukti Dokumen| E
+    D -->|5. Progres Terakumulasi Otomatis| F["📈 Dasbor Pemantauan Progres"]
+    C -->|6. Kunci & Ajukan Laporan Bulanan| G[("🔒 Database: Tab Pengajuan")]
+    G -->|7. Masuk Daftar Siap Dinilai| H["📊 Penilai / Admin"]
+    H -->|8. Beri Nilai Kinerja & BerAKHLAK| I[("⭐ Database: Tab Penilaian")]
+    I -->|9. Umpan Balik Instan| J["🧑‍💼 Pegawai: Tab Nilai Saya"]
+    H -->|Buka Kunci Laporan jika Perlu| G
+
+    style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+    style C fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style H fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style J fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="section" id="step1">
+    <div class="section-eyebrow">Bagian 3</div>
+    <h2 class="section-title">🚶 Langkah demi Langkah Alur Kerja</h2>
+
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Tahap Perencanaan</div>
+          <div class="step-by">Dilakukan oleh: Ketua Tim / Admin</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Ketua Tim menyusun rencana aktivitas kerja sesuai dokumen rencana kinerja BPS:</p>
+      <ol>
+        <li>Buka tab <strong>Rencana & Aktivitas</strong>.</li>
+        <li>Telusuri hierarki: <strong>Tujuan → Sasaran → IKU → Kegiatan → Sub Kegiatan</strong>.</li>
+        <li>Klik tombol <strong>+ Tambah Aktivitas</strong> pada Sub Kegiatan yang relevan.</li>
+        <li>Isi formulir aktivitas:
+          <ul>
+            <li><strong>Nama Aktivitas</strong>: Judul tugas spesifik yang akan dikerjakan.</li>
+            <li><strong>Target & Satuan</strong>: Jumlah output yang ditargetkan (contoh: <code>100 dokumen</code>).</li>
+            <li><strong>Periode Mulai & Selesai</strong>: Rentang waktu pengerjaan.</li>
+            <li><strong>Ditugaskan Kepada</strong>: Pilih satu atau lebih nama <strong>Pegawai</strong> yang bertanggung jawab.</li>
+          </ul>
+        </li>
+        <li>Klik <strong>Simpan</strong>.</li>
+      </ol>
+      <div class="note warning">
+        <div class="note-icon">⚠️</div>
+        <div>Hanya pengguna berperan <strong>Pegawai</strong> yang dapat dipilih sebagai penerima tugas. Ketua Tim tidak dapat menerima penugasan aktivitas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-section" id="step2">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Tahap Pelaporan & Penguncian</div>
+        <div class="step-by">Dilakukan oleh: Pegawai</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Pegawai mencatatkan laporan harian dan mengunci data di akhir bulan:</p>
+    <ol>
+      <li>Buka tab <strong>Lapor Harian</strong>.</li>
+      <li>Pilih <strong>Bulan Laporan</strong> menggunakan filter di bagian atas halaman.</li>
+      <li>Klik tombol <strong>Buat Laporan Baru</strong> (hanya muncul jika bulan tersebut belum dikunci).</li>
+      <li>Isi formulir laporan harian:
+        <ul>
+          <li><strong>Tanggal</strong>: Tanggal pengerjaan aktivitas.</li>
+          <li><strong>Aktivitas</strong>: Pilih nama aktivitas yang dikerjakan (dari daftar tugas yang di-assign).</li>
+          <li><strong>Jumlah Capaian</strong>: Berapa unit target yang berhasil diselesaikan hari itu.</li>
+          <li><strong>Uraian Laporan</strong>: Penjelasan singkat pekerjaan yang dilakukan.</li>
+          <li><strong>File Bukti / Link</strong>: Unggah berkas pendukung ke Google Drive BPS atau masukkan tautan eksternal.</li>
+        </ul>
+      </li>
+      <li>Klik <strong>Kirim Laporan</strong>.</li>
+      <li>Di akhir bulan, klik tombol <strong>Kunci & Ajukan Laporan</strong> untuk mengunci seluruh laporan bulan itu.</li>
+    </ol>
+    <div class="note info">
+      <div class="note-icon">ℹ️</div>
+      <div>Setelah dikunci, pegawai tidak dapat menambah, mengedit, atau menghapus laporan bulan tersebut. Jika ada kesalahan, hubungi Penilai atau Admin untuk membuka kunci.</div>
+    </div>
+    <div class="note success">
+      <div class="note-icon">✅</div>
+      <div><strong>Pembatalan Mandiri</strong>: Jika laporan sudah dikunci tetapi <strong>belum dinilai</strong>, pegawai dapat membatalkan penguncian secara mandiri menggunakan tombol <strong>"Batalkan Pengajuan"</strong> di tab Lapor Harian.</div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-section" id="step3" style="margin-top:20px">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Tahap Penilaian & Buka Kunci</div>
+        <div class="step-by">Dilakukan oleh: Penilai / Admin</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Di akhir bulan, Penilai melakukan evaluasi berdasarkan laporan yang telah dikunci:</p>
+    <ol>
+      <li>Buka tab <strong>Penilaian Bulanan</strong>.</li>
+      <li>Pilih <strong>Periode Bulan</strong> evaluasi yang diinginkan.</li>
+      <li>Periksa daftar pegawai pada kolom <strong>"Belum Dinilai"</strong>:</li>
+    </ol>
+    <div class="status-list">
+      <div class="status-item">
+        <div class="status-dot" style="background:#78909C"></div>
+        <div><strong>Belum Mengajukan</strong> — Pegawai belum mengunci laporannya. Tombol <em>Beri Nilai</em> dinonaktifkan.</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot" style="background:#F59E0B"></div>
+        <div><strong>Menunggu Penilaian</strong> — Laporan sudah dikunci. Tombol <em>Beri Nilai</em> aktif dan dapat diklik.</div>
+      </div>
+    </div>
+    <ol start="4">
+      <li>Klik <strong>Beri Nilai</strong> dan isi formulir penilaian:
+        <ul>
+          <li><strong>Nilai Kinerja</strong>: Sangat Baik / Baik / Cukup Baik / Tidak Baik.</li>
+          <li><strong>Nilai BerAKHLAK</strong>: Skor 1–5 untuk setiap dari 7 dimensi karakter ASN (Berorientasi Pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif).</li>
+          <li><strong>Catatan Evaluasi</strong>: Masukan dan saran untuk pegawai.</li>
+        </ul>
+      </li>
+      <li>Klik <strong>Simpan Penilaian</strong>.</li>
+    </ol>
+    <div class="note danger">
+      <div class="note-icon">🔓</div>
+      <div><strong>Buka Kunci Laporan</strong>: Jika pegawai perlu menambahkan laporan yang terlewat, Penilai/Admin dapat mengklik ikon gembok di sebelah nama pegawai untuk membuka kembali laporannya.</div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step-section" id="step4" style="margin-top:20px">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">Tahap Umpan Balik</div>
+        <div class="step-by">Dilakukan oleh: Pegawai</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Setelah Penilai memberikan nilai, setiap pegawai dapat melihat hasilnya secara transparan:</p>
+    <ol>
+      <li>Buka tab <strong>Nilai Saya</strong>.</li>
+      <li>Pilih <strong>Bulan</strong> penilaian yang ingin dilihat.</li>
+      <li>Tampilan akan menampilkan:
+        <ul>
+          <li>Skor Kinerja Bulanan beserta peringkat kategori.</li>
+          <li>Rincian Nilai Karakter BerAKHLAK per dimensi.</li>
+          <li>Catatan evaluasi dan saran perbaikan dari Penilai.</li>
+        </ul>
+      </li>
+    </ol>
+    <div class="note info">
+      <div class="note-icon">🏆</div>
+      <div>Penilaian bulanan juga digunakan untuk menentukan <strong>Employee of the Month (Pegawai Terbaik)</strong> yang dapat dilihat di tab khusus. Kriteria: Skor total tertinggi, kemudian jumlah laporan terbanyak, kecepatan input, pemerataan kemenangan, dan acak deterministik.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  Dokumen ini dipelihara secara otomatis bersama kode aplikasi di repositori GitHub.<br>
+  <strong>BPS Kabupaten Puncak</strong> &bull; Sistem Manajemen Kinerja Tim &bull; 2026
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#12335F',
+      primaryTextColor: '#1B2430',
+      primaryBorderColor: '#2C5490',
+      lineColor: '#66748A',
+      secondaryColor: '#F4F6F9',
+      tertiaryColor: '#DBEAFE',
+      edgeLabelBackground: '#FFFFFF',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', padding: 20 }
+  });
+</script>
+</body>
+</html>
