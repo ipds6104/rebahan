@@ -1430,8 +1430,8 @@
       // Rekap Tim (Untuk Admin, Ketua Tim, Penilai, Pegawai)
       NAV.push({ id: "rekap", label: "Rekap Tim", icon: "bar-chart-3" });
       
-      // Nilai Saya (Untuk Ketua Tim & Pegawai)
-      if (["ketua_tim", "pegawai"].includes(role)) {
+      // Nilai Saya (Untuk Admin, Ketua Tim & Pegawai)
+      if (["admin", "ketua_tim", "pegawai"].includes(role)) {
         NAV.push({ id: "nilaiku", label: "Nilai Saya", icon: "user-check" });
       }
       
@@ -1479,7 +1479,7 @@
     }
 
     function renderDashboard() {
-      const isKetua = CURRENT_USER.role === "ketua_tim";
+      const isKetua = CURRENT_USER.role === "ketua_tim" || CURRENT_USER.role === "admin";
       const totalAktivitas = DATA.aktivitas.length;
       const totalTarget = DATA.aktivitas.reduce((s, a) => s + (Number(a.target) || 0), 0);
       const totalCapaian = DATA.laporan.reduce((s, l) => s + (Number(l.capaian) || 0), 0);
@@ -2394,7 +2394,7 @@
       else if (STATE.tab === "lapor" && role === "pegawai") el.innerHTML = renderLaporTab();
       else if (STATE.tab === "penilaian" && ["admin", "penilai"].includes(role)) el.innerHTML = renderPenilaianTab();
       else if (STATE.tab === "rekap") el.innerHTML = renderRekapTab();
-      else if (STATE.tab === "nilaiku" && ["ketua_tim", "pegawai"].includes(role)) el.innerHTML = renderNilaikuTab();
+      else if (STATE.tab === "nilaiku" && ["admin", "ketua_tim", "pegawai"].includes(role)) el.innerHTML = renderNilaikuTab();
       else if (STATE.tab === "anggota" && ["admin", "ketua_tim"].includes(role)) el.innerHTML = renderAnggotaTab();
       else {
         STATE.tab = "dashboard";
