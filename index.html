@@ -1822,13 +1822,18 @@
       <select class="input" style="width:auto" id="filter-pegawai"><option value="all">Semua Pegawai</option>${pegOptions}</select>
       <input class="input" type="date" style="width:auto" id="filter-dari" value="${STATE.filterDariTanggal}" title="Dari tanggal">
       <input class="input" type="date" style="width:auto" id="filter-sampai" value="${STATE.filterSampaiTanggal}" title="Sampai tanggal">
-      <div style="flex:1"></div>
-      <button class="btn-ghost small" data-action="download-csv-aktivitas">${icon("download")} Rekap Aktivitas</button>
-      <button class="btn-ghost small" data-action="download-csv-log">${icon("download")} Log Harian</button>
     </div>
-    <h3 class="panel-title" style="margin-bottom:10px">Rekap per Aktivitas</h3>
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px">
+      <h3 class="panel-title" style="margin:0">Rekap per Aktivitas</h3>
+      <button class="btn-ghost small" data-action="download-csv-aktivitas" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:6px">${icon("download", 'style="width:14px;height:14px"')} Unduh CSV</button>
+    </div>
     ${aktivitasTable}
-    <h3 class="panel-title" style="margin-bottom:10px">Log Laporan Harian</h3>
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:25px 0 10px">
+      <h3 class="panel-title" style="margin:0">Log Laporan Harian</h3>
+      <button class="btn-ghost small" data-action="download-csv-log" style="padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:6px">${icon("download", 'style="width:14px;height:14px"')} Unduh CSV</button>
+    </div>
     ${logTable}
   `;
     }
@@ -2479,7 +2484,12 @@
     }
     function downloadCsvAktivitas() {
       const header = ["Tujuan", "Sasaran", "IKU", "Kegiatan", "Sub Kegiatan", "Aktivitas", "Target", "Satuan", "Capaian", "Persen", "Status", "PIC", "Periode Mulai", "Periode Selesai"];
-      const lines = DATA.aktivitas.map(a => {
+      
+      let list = DATA.aktivitas.slice();
+      if (STATE.filterAktivitas !== "all") list = list.filter(a => a.id === STATE.filterAktivitas);
+      if (STATE.filterPegawai !== "all") list = list.filter(a => (a.assignedTo || []).includes(STATE.filterPegawai));
+      
+      const lines = list.map(a => {
         const { sum, percent } = computeProgress(a.id);
         return toCsvRow([a.tujuan, a.sasaran, a.iku, a.kegiatan, a.subKegiatan, a.nama, a.target, a.satuan, sum, percent + "%", statusMeta(percent).label, (a.assignedTo || []).map(id => userName(id)).join("; "), a.periodeMulai, a.periodeSelesai]);
       });
@@ -2487,7 +2497,15 @@
     }
     function downloadCsvLog() {
       const header = ["Tanggal", "Pegawai", "Aktivitas", "Kegiatan", "Uraian", "Capaian", "Satuan", "Bukti Dukung"];
-      const lines = DATA.laporan.map(l => {
+      
+      let list = DATA.laporan.slice();
+      if (STATE.filterAktivitas !== "all") list = list.filter(l => l.aktivitasId === STATE.filterAktivitas);
+      if (STATE.filterPegawai !== "all") list = list.filter(l => l.pegawaiId === STATE.filterPegawai);
+      if (STATE.filterDariTanggal) list = list.filter(l => l.tanggal >= STATE.filterDariTanggal);
+      if (STATE.filterSampaiTanggal) list = list.filter(l => l.tanggal <= STATE.filterSampaiTanggal);
+      list.sort((a, b) => (b.tanggal || "").localeCompare(a.tanggal || "") || b.createdAt - a.createdAt);
+
+      const lines = list.map(l => {
         const akt = DATA.aktivitas.find(a => a.id === l.aktivitasId);
         return toCsvRow([l.tanggal, userName(l.pegawaiId), akt ? akt.nama : "", akt ? akt.kegiatan : "", l.uraian, l.capaian, akt ? akt.satuan : "", l.buktiTipe === "file" ? (l.buktiNama || "(file terlampir)") : (l.buktiUrl || "")]);
       });
