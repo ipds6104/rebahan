@@ -29,6 +29,7 @@ const SHEETS = {
   AKTIVITAS: "Aktivitas",
   LAPORAN: "Laporan",
   PENILAIAN: "Penilaian",
+  PENGAJUAN: "Pengajuan",
 };
 
 const HEADERS = {
@@ -42,6 +43,7 @@ const HEADERS = {
   Penilaian: ["id", "pegawaiId", "penilaiId", "bulan", "nilaiKinerja",
     "berorientasiPelayanan", "akuntabel", "kompeten", "harmonis",
     "loyal", "adaptif", "kolaboratif", "catatan", "createdAt"],
+  Pengajuan: ["id", "pegawaiId", "bulan", "status", "createdAt"],
 };
 
 /**
@@ -276,11 +278,13 @@ function doGet(e) {
     if (action === "aktivitas") return jsonResponse(sheetToObjects(SHEETS.AKTIVITAS).map(normalizeAktivitasOut));
     if (action === "laporan") return jsonResponse(sheetToObjects(SHEETS.LAPORAN).map(normalizeLaporanOut));
     if (action === "penilaian") return jsonResponse(sheetToObjects(SHEETS.PENILAIAN).map(normalizePenilaianOut));
+    if (action === "pengajuan") return jsonResponse(sheetToObjects(SHEETS.PENGAJUAN));
 
     const mutationActions = ["register", "login", "logout", "updateUser", "deleteUser",
       "createAktivitas", "updateAktivitas", "deleteAktivitas",
       "createLaporan", "updateLaporan", "deleteLaporan",
-      "createPenilaian", "updatePenilaian", "deletePenilaian"];
+      "createPenilaian", "updatePenilaian", "deletePenilaian",
+      "createPengajuan", "deletePengajuan"];
     if (mutationActions.includes(action)) {
       const body = {};
       for (const key of Object.keys(e.parameter)) {
@@ -317,6 +321,8 @@ function executeAction(action, body) {
     case "createPenilaian": result = handleCreatePenilaian(body); break;
     case "updatePenilaian": result = handleUpdatePenilaian(body); break;
     case "deletePenilaian": result = handleDeletePenilaian(body); break;
+    case "createPengajuan": result = handleCreatePengajuan(body); break;
+    case "deletePengajuan": result = handleDeletePengajuan(body); break;
     default: return errorResponse("Aksi tidak dikenal: " + action, 404);
   }
   return jsonResponse(result);
@@ -551,6 +557,16 @@ function saveBuktiFileToDrive(base64Data, fileName, mimeType) {
   return { url: "https://drive.google.com/uc?id=" + file.getId(), name: fileName || file.getName() };
 }
 
+function checkLaporanLocked(pegawaiId, tanggal) {
+  if (!tanggal) return;
+  const bulan = String(tanggal).slice(0, 7); // "YYYY-MM"
+  const pengajuans = sheetToObjects(SHEETS.PENGAJUAN);
+  const exists = pengajuans.find(p => p.pegawaiId === pegawaiId && p.bulan === bulan && p.status === "diajukan");
+  if (exists) {
+    throw new Error("Laporan untuk bulan ini sudah dikunci dan diajukan. Hubungi Penilai/Admin untuk membuka kunci.");
+  }
+}
+
 function handleCreateLaporan(body) {
   const current = requireUser(body.token);
   if (current.role !== "pegawai") {
@@ -559,6 +575,9 @@ function handleCreateLaporan(body) {
   if (!body.aktivitasId || !body.tanggal || !body.uraian || !body.capaian) {
     throw new Error("Aktivitas, tanggal, uraian, dan capaian wajib diisi.");
   }
+  
+  checkLaporanLocked(current.id, body.tanggal);
+
   const aktivitas = sheetToObjects(SHEETS.AKTIVITAS).find(a => a.id === body.aktivitasId);
   if (!aktivitas) throw new Error("Aktivitas tidak ditemukan.");
   const assigned = (aktivitas.assignedTo || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -589,6 +608,12 @@ function handleUpdateLaporan(body) {
   if (existing.pegawaiId !== current.id && current.role !== "admin" && current.role !== "ketua_tim") {
     throw new Error("Anda tidak dapat mengubah laporan ini.");
   }
+
+  checkLaporanLocked(existing.pegawaiId, existing.tanggal);
+  if (body.tanggal && body.tanggal !== existing.tanggal) {
+    checkLaporanLocked(existing.pegawaiId, body.tanggal);
+  }
+
   const patch = {};
   if (body.tanggal) patch.tanggal = body.tanggal;
   if (body.uraian) patch.uraian = String(body.uraian).trim();
@@ -610,7 +635,60 @@ function handleDeleteLaporan(body) {
   if (existing.pegawaiId !== current.id && current.role !== "admin" && current.role !== "ketua_tim") {
     throw new Error("Anda tidak dapat menghapus laporan ini.");
   }
+
+  checkLaporanLocked(existing.pegawaiId, existing.tanggal);
+
   deleteRowById(SHEETS.LAPORAN, body.id);
+  return { ok: true };
+}
+
+/* ========================= PENGAJUAN HANDLERS ========================= */
+function handleCreatePengajuan(body) {
+  const current = requireUser(body.token);
+  const pegawaiId = body.pegawaiId || current.id;
+  
+  if (current.id !== pegawaiId && current.role !== "admin" && current.role !== "penilai") {
+    throw new Error("Akses ditolak.");
+  }
+  
+  if (!body.bulan) throw new Error("Bulan wajib ditentukan.");
+  const bulan = String(body.bulan).slice(0, 7);
+  
+  const list = sheetToObjects(SHEETS.PENGAJUAN);
+  const exists = list.find(p => p.pegawaiId === pegawaiId && p.bulan === bulan);
+  if (exists) {
+    if (exists.status === "diajukan") return exists;
+    const updated = updateObjectById(SHEETS.PENGAJUAN, exists.id, { status: "diajukan", createdAt: Date.now() });
+    return updated;
+  }
+  
+  const item = {
+    id: newId("pgj"),
+    pegawaiId,
+    bulan,
+    status: "diajukan",
+    createdAt: Date.now()
+  };
+  appendObject(SHEETS.PENGAJUAN, item);
+  return item;
+}
+
+function handleDeletePengajuan(body) {
+  const current = requireUser(body.token);
+  if (current.role !== "admin" && current.role !== "penilai" && current.role !== "ketua_tim") {
+    throw new Error("Akses ditolak. Hanya Penilai atau Admin yang dapat membuka kunci laporan.");
+  }
+  
+  if (!body.pegawaiId || !body.bulan) {
+    throw new Error("Pegawai dan bulan wajib ditentukan.");
+  }
+  const bulan = String(body.bulan).slice(0, 7);
+  
+  const list = sheetToObjects(SHEETS.PENGAJUAN);
+  const exists = list.find(p => p.pegawaiId === body.pegawaiId && p.bulan === bulan);
+  if (exists) {
+    deleteRowById(SHEETS.PENGAJUAN, exists.id);
+  }
   return { ok: true };
 }
 

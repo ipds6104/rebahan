@@ -1159,7 +1159,7 @@
     }
 
     let REFERENSI = [];
-    let DATA = { users: [], aktivitas: [], laporan: [], penilaian: [] };
+    let DATA = { users: [], aktivitas: [], laporan: [], penilaian: [], pengajuan: [] };
     let CURRENT_USER = null;
     let STATE = { 
       tab: "dashboard", 
@@ -1174,10 +1174,10 @@
     };
 
     async function refreshAll() {
-      const [users, aktivitas, laporan, penilaian] = await Promise.all([
-        apiGet("users"), apiGet("aktivitas"), apiGet("laporan"), apiGet("penilaian"),
+      const [users, aktivitas, laporan, penilaian, pengajuan] = await Promise.all([
+        apiGet("users"), apiGet("aktivitas"), apiGet("laporan"), apiGet("penilaian"), apiGet("pengajuan"),
       ]);
-      DATA = { users, aktivitas, laporan, penilaian };
+      DATA = { users, aktivitas, laporan, penilaian, pengajuan };
     }
 
     function uid(prefix) { return prefix + "_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
@@ -1675,20 +1675,46 @@
     }
 
     function renderLaporTab() {
-      const myAktivitas = DATA.aktivitas.filter(a => (a.assignedTo || []).includes(CURRENT_USER.id));
-      const myLaporan = DATA.laporan.filter(l => l.pegawaiId === CURRENT_USER.id).sort((a, b) => b.createdAt - a.createdAt);
+      if (!STATE.laporBulan) {
+        STATE.laporBulan = new Date().toISOString().slice(0, 7);
+      }
+      const selBulan = STATE.laporBulan;
+      const isSubmitted = (DATA.pengajuan || []).some(p => p.pegawaiId === CURRENT_USER.id && p.bulan === selBulan && p.status === "diajukan");
 
-      const formBlock = myAktivitas.length === 0
-        ? emptyState("Belum ada aktivitas ditugaskan", "Hubungi Ketua Tim agar Anda ditugaskan ke sebuah aktivitas terlebih dahulu.")
-        : `<div class="panel" style="margin-bottom:18px">
-        <div class="panel-head"><h3 class="panel-title">Tambah Laporan Hari Ini</h3></div>
-        <button class="btn-primary" data-action="open-lapor-add" data-aktivitas="">${icon("plus")} Buat Laporan Baru</button>
-      </div>`;
+      const myAktivitas = DATA.aktivitas.filter(a => (a.assignedTo || []).includes(CURRENT_USER.id));
+      const myLaporan = DATA.laporan.filter(l => l.pegawaiId === CURRENT_USER.id && String(l.tanggal).slice(0, 7) === selBulan).sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.createdAt - a.createdAt);
+
+      let formBlock = "";
+      if (myAktivitas.length === 0) {
+        formBlock = emptyState("Belum ada aktivitas ditugaskan", "Hubungi Ketua Tim agar Anda ditugaskan ke sebuah aktivitas terlebih dahulu.");
+      } else if (isSubmitted) {
+        formBlock = `
+          <div class="panel" style="margin-bottom:18px;background:#F0F9FF;border-left:4px solid var(--color-primary-light);display:flex;align-items:center;justify-content:space-between;padding:16px">
+            <div>
+              <h4 style="margin:0 0 4px;color:var(--color-primary);font-size:14.5px;font-family:var(--font-display);display:flex;align-items:center;gap:6px">${icon("lock", 'style="width:16px;height:16px"')} Laporan Terkunci</h4>
+              <p style="margin:0;font-size:12.5px;color:var(--color-text-muted)">Laporan Anda untuk bulan ${fmtMonth(selBulan)} telah dikunci dan diajukan ke Penilai. Anda tidak dapat menambah atau mengubah laporan harian pada bulan ini.</p>
+            </div>
+          </div>
+        `;
+      } else {
+        formBlock = `
+          <div class="panel" style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+              <h4 style="margin:0 0 4px;font-size:14.5px;font-family:var(--font-display)">📝 Kelola Laporan Bulanan</h4>
+              <p style="margin:0;font-size:12.5px;color:var(--color-text-muted)">Silakan tambahkan semua laporan harian Anda untuk bulan ${fmtMonth(selBulan)}. Setelah selesai, silakan ajukan laporan.</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-primary" data-action="open-lapor-add" data-aktivitas="">${icon("plus")} Buat Laporan Baru</button>
+              <button class="btn-accent" data-action="submit-lapor-bulan" data-bulan="${selBulan}">${icon("lock")} Kunci &amp; Ajukan Laporan</button>
+            </div>
+          </div>
+        `;
+      }
 
       const historyBlock = myLaporan.length === 0
-        ? emptyState("Belum ada riwayat laporan", "Laporan harian Anda akan muncul di sini.")
+        ? emptyState("Belum ada riwayat laporan", `Tidak ada riwayat laporan harian untuk bulan ${fmtMonth(selBulan)}.`)
         : `<div class="report-wrap"><table class="report">
-        <thead><tr><th>Tanggal</th><th>Aktivitas</th><th>Uraian</th><th>Capaian</th><th>Bukti Dukung</th><th></th></tr></thead>
+        <thead><tr><th>Tanggal</th><th>Aktivitas</th><th>Uraian</th><th>Capaian</th><th>Bukti Dukung</th>${isSubmitted ? "" : "<th></th>"}</tr></thead>
         <tbody>
           ${myLaporan.map(l => {
           const akt = DATA.aktivitas.find(a => a.id === l.aktivitasId);
@@ -1698,19 +1724,25 @@
               <td style="max-width:240px">${esc(l.uraian)}</td>
               <td>${l.capaian} ${akt ? esc(akt.satuan || "") : ""}</td>
               <td>${renderBuktiLink(l)}</td>
-              <td><div style="display:flex;gap:4px">
+              ${isSubmitted ? "" : `<td><div style="display:flex;gap:4px">
                 <button class="icon-btn" title="Ubah" data-action="open-lapor-edit" data-id="${l.id}">${icon("pencil")}</button>
                 <button class="icon-btn danger" title="Hapus" data-action="delete-lapor" data-id="${l.id}">${icon("trash-2")}</button>
-              </div></td>
+              </div></td>`}
             </tr>`;
         }).join("")}
         </tbody>
       </table></div>`;
 
       return `
-    ${sectionHead("Aktivitas Harian", "Lapor Harian", "Catat pekerjaan yang Anda lakukan hari ini beserta bukti dukungnya. Laporan ini otomatis terekap ke dalam capaian aktivitas dan laporan tim.")}
+    ${sectionHead("Aktivitas Harian", "Lapor Harian", "Catat pekerjaan yang Anda lakukan hari ini beserta bukti dukungnya.")}
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <label class="field" style="margin:0;max-width:200px">
+        <span class="field-label">Pilih Bulan Laporan</span>
+        <input class="input" type="month" id="lapor-bulan-select" value="${selBulan}">
+      </label>
+    </div>
     ${formBlock}
-    <div class="panel-head" style="margin:20px 0 10px"><h3 class="panel-title" style="margin:0">Riwayat Laporan Saya</h3></div>
+    <div class="panel-head" style="margin:20px 0 10px"><h3 class="panel-title" style="margin:0">Riwayat Laporan Saya (${fmtMonth(selBulan)})</h3></div>
     ${historyBlock}
   `;
     }
@@ -1906,14 +1938,37 @@
       <div class="panel">
         <div class="panel-head"><h3 class="panel-title" style="color: var(--color-warning);">${icon("circle-alert")} Belum Dinilai (${notEvaluatedList.length})</h3></div>
         ${notEvaluatedList.length === 0 ? `<div class="empty-row">Semua pegawai sudah dinilai pada bulan ini.</div>` :
-          notEvaluatedList.map(u => `
-          <div class="person-row" style="margin-bottom:10px">
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="avatar">${esc(u.nama.slice(0, 1).toUpperCase())}</div>
-              <div><div class="person-name">${esc(u.nama)}</div><div class="person-meta" style="text-transform:uppercase">${u.role.replace("_", " ")}</div></div>
-            </div>
-            <button class="btn-accent small" data-action="open-penilaian-add" data-id="${u.id}">${icon("award")} Beri Nilai</button>
-          </div>`).join("")}
+          notEvaluatedList.map(u => {
+            const hasPengajuan = (DATA.pengajuan || []).some(pg => pg.pegawaiId === u.id && pg.bulan === STATE.filterBulan && pg.status === "diajukan");
+            const canRate = CURRENT_USER.role === "admin" || hasPengajuan;
+            
+            const statusBadge = hasPengajuan 
+              ? `<span class="badge" style="background:#FFF3E0;color:#E65100;font-size:10.5px;padding:2px 6px">Menunggu Penilaian</span>`
+              : `<span class="badge" style="background:#ECEFF1;color:#37474F;font-size:10.5px;padding:2px 6px">Belum Mengajukan</span>`;
+              
+            const rateBtn = canRate 
+              ? `<button class="btn-accent small" data-action="open-penilaian-add" data-id="${u.id}">${icon("award")} Beri Nilai</button>`
+              : `<button class="btn-ghost small" style="opacity:0.5; cursor:not-allowed;" title="Pegawai belum mengunci & mengajukan laporan bulan ini" disabled>${icon("award")} Beri Nilai</button>`;
+              
+            const unlockBtn = hasPengajuan 
+              ? `<button class="icon-btn" title="Buka Kunci Laporan" data-action="unlock-lapor-bulan" data-pegawaiid="${u.id}" data-bulan="${STATE.filterBulan}">${icon("unlock")}</button>`
+              : "";
+
+            return `
+            <div class="person-row" style="margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="avatar">${esc(u.nama.slice(0, 1).toUpperCase())}</div>
+                <div>
+                  <div class="person-name" style="display:flex;align-items:center;gap:6px">${esc(u.nama)} ${statusBadge}</div>
+                  <div class="person-meta" style="text-transform:uppercase">${u.role.replace("_", " ")}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:4px">
+                ${rateBtn}
+                ${unlockBtn}
+              </div>
+            </div>`;
+          }).join("")}
       </div>
       
       <div class="panel">
@@ -1922,6 +1977,12 @@
           evaluatedList.map(x => {
             const p = x.penilaian;
             const avgBerakhlak = ((p.berorientasiPelayanan + p.akuntabel + p.kompeten + p.harmonis + p.loyal + p.adaptif + p.kolaboratif) / 7).toFixed(1);
+            const hasPengajuan = (DATA.pengajuan || []).some(pg => pg.pegawaiId === x.user.id && pg.bulan === STATE.filterBulan && pg.status === "diajukan");
+            
+            const unlockBtn = hasPengajuan 
+              ? `<button class="icon-btn" title="Buka Kunci Laporan" data-action="unlock-lapor-bulan" data-pegawaiid="${x.user.id}" data-bulan="${STATE.filterBulan}">${icon("unlock")}</button>`
+              : "";
+
             return `
             <div class="person-row" style="display:flex;flex-direction:column;align-items:stretch;gap:8px;padding: 12px;background:#F9FBFC">
               <div style="display:flex;align-items:center;justify-content:between">
@@ -1930,6 +1991,7 @@
                   <div><div class="person-name">${esc(x.user.nama)}</div><div class="person-meta" style="text-transform:uppercase">${x.user.role.replace("_", " ")}</div></div>
                 </div>
                 <div style="margin-left:auto; display:flex; gap:4px">
+                  ${unlockBtn}
                   <button class="icon-btn" title="Ubah" data-action="open-penilaian-edit" data-id="${p.id}">${icon("pencil")}</button>
                   <button class="icon-btn danger" title="Hapus" data-action="delete-penilaian" data-id="${p.id}">${icon("trash-2")}</button>
                 </div>
@@ -2537,6 +2599,33 @@
 
           case "close-modal": closeModal(); break;
           case "dismiss-toast": { const r = document.getElementById("toast-root"); if (r) r.innerHTML = ""; break; }
+          case "submit-lapor-bulan": {
+            const bulan = el.dataset.bulan;
+            if (confirm(`Kunci dan ajukan laporan Anda untuk bulan ${fmtMonth(bulan)}? Anda tidak akan dapat mengubah/menambah laporan untuk bulan tersebut.`)) {
+              await withBusy(el, async () => {
+                await apiPost("createPengajuan", { bulan });
+                await refreshAll();
+                renderContent();
+                showToast("Laporan berhasil dikunci dan diajukan.", "success");
+              })();
+            }
+            break;
+          }
+          case "unlock-lapor-bulan": {
+            const pegawaiId = el.dataset.pegawaiid;
+            const bulan = el.dataset.bulan;
+            const peg = DATA.users.find(u => u.id === pegawaiId);
+            const name = peg ? peg.nama : "Pegawai";
+            if (confirm(`Buka kembali kunci laporan ${name} untuk bulan ${fmtMonth(bulan)}?`)) {
+              await withBusy(el, async () => {
+                await apiPost("deletePengajuan", { pegawaiId, bulan });
+                await refreshAll();
+                renderContent();
+                showToast(`Kunci laporan ${name} berhasil dibuka.`, "success");
+              })();
+            }
+            break;
+          }
           case "download-csv-aktivitas": downloadCsvAktivitas(); break;
           case "download-csv-log": downloadCsvLog(); break;
         }
@@ -2553,6 +2642,7 @@
       else if (el.id === "filter-dari") { STATE.filterDariTanggal = el.value; renderContent(); }
       else if (el.id === "filter-sampai") { STATE.filterSampaiTanggal = el.value; renderContent(); }
       else if (el.id === "pen-filter-bulan") { STATE.filterBulan = el.value; renderContent(); }
+      else if (el.id === "lapor-bulan-select") { STATE.laporBulan = el.value; renderContent(); }
     });
 
     let __searchDebounce = null;

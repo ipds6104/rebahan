@@ -1,7 +1,7 @@
 # 📘 Panduan Alur Kerja Aplikasi Manajemen Kinerja Tim
 ### BPS Kabupaten Puncak
 
-Dokumen ini menjelaskan alur kerja dari perencanaan aktivitas, pelaporan harian oleh pegawai, hingga penilaian bulanan (Kinerja & BerAKHLAK) oleh penilai.
+Dokumen ini menjelaskan alur kerja dari perencanaan aktivitas, pelaporan harian oleh pegawai, penguncian bulanan, hingga penilaian bulanan (Kinerja & BerAKHLAK) oleh penilai.
 
 ---
 
@@ -10,8 +10,8 @@ Dokumen ini menjelaskan alur kerja dari perencanaan aktivitas, pelaporan harian 
 Untuk memahami alur kerja, berikut adalah hak akses dari masing-masing peran di aplikasi:
 *   **Admin**: Mengelola pengguna & peran, serta memiliki semua hak akses Ketua Tim & Penilai.
 *   **Ketua Tim**: Membuat aktivitas program, menugaskan pegawai, dan memantau capaian progres tim.
-*   **Penilai**: Melakukan penilaian bulanan (Kinerja & nilai BerAKHLAK ASN) untuk seluruh pegawai.
-*   **Pegawai**: Melihat aktivitas yang ditugaskan, mengirimkan laporan harian beserta bukti dukung, dan melihat rekap penilaian bulanan miliknya.
+*   **Penilai**: Melakukan penilaian bulanan (Kinerja & nilai BerAKHLAK ASN) untuk seluruh pegawai yang sudah mengajukan laporan.
+*   **Pegawai**: Melihat aktivitas yang ditugaskan, mengirimkan laporan harian beserta bukti dukung, mengajukan kunci laporan bulanan, dan melihat rekap penilaian bulanan miliknya.
 *   **Tamu**: Pengguna baru yang mendaftar secara mandiri dan sedang menunggu persetujuan Admin.
 
 ---
@@ -26,10 +26,18 @@ graph TD
     C -->|4. Unggah Bukti Dukung Berkas| E[Google Drive Folder]
     D -.->|Tautan Bukti Dokumen| E
     D -->|5. Progres Terakumulasi Otomatis| F[Dasbor Pemantauan Progres]
-    F -->|6. Dipantau Bersama| G[Monitoring Tim]
-    G -->|7. Evaluasi Akhir Bulan| H[Penilai / Admin]
+    
+    %% Alur Kunci Bulanan
+    C -->|6. Kunci & Ajukan Laporan Bulanan| G(Database: Tab Pengajuan)
+    G -->|Laporan Terkunci Secara Aman| D
+    
+    %% Alur Penilaian
+    G -->|7. Masuk Daftar Siap Dinilai| H[Penilai / Admin]
     H -->|8. Beri Nilai Kinerja & BerAKHLAK| I(Database: Tab Penilaian)
     I -->|9. Umpan Balik Instan| J[Pegawai: Tab Nilai Saya]
+    
+    %% Alur Pengembalian (Unlock)
+    H -->|Buka Kunci Laporan| G
     
     style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
     style C fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
@@ -56,41 +64,31 @@ Sebagai pemimpin tim, Ketua Tim menyusun rencana aktivitas kerja:
 
 ---
 
-### 2. Tahap Pelaporan Harian (Oleh: Pegawai)
-Pegawai yang telah ditugaskan melakukan pengerjaan dan melaporkan progresnya setiap hari:
-1.  Buka tab **Aktivitas Saya**. Pegawai akan melihat daftar aktivitas yang ditugaskan kepada mereka lengkap dengan bar progres capaian.
-2.  Klik tombol **Laporkan** pada aktivitas yang ingin dilaporkan.
-3.  Isi formulir laporan harian:
+### 2. Tahap Pelaporan & Penguncian (Oleh: Pegawai)
+Pegawai mengisi laporan harian dan mengunci datanya di akhir bulan:
+1.  Buka tab **Lapor Harian**.
+2.  Pilih bulan pengerjaan pada filter **Pilih Bulan Laporan** di bagian atas.
+3.  Klik tombol **Buat Laporan Baru** (tombol ini hanya muncul jika bulan tersebut belum dikunci).
+4.  Isi formulir laporan harian:
     *   **Tanggal**: Tanggal pengerjaan aktivitas.
-    *   **Jumlah Capaian**: Berapa target yang berhasil diselesaikan pada hari itu (misal: `5` dokumen).
+    *   **Jumlah Capaian**: Berapa target yang berhasil diselesaikan pada hari itu.
     *   **Uraian Laporan**: Penjelasan singkat pekerjaan yang dilakukan.
-    *   **Tipe Bukti**: Pilih **File** (unggah dokumen/gambar) atau **Link** (tautan luar, misal Google Drive/SharePoint).
-    *   **File Bukti** (jika tipe bukti adalah file): Pilih berkas bukti dukung dari perangkat. Berkas akan otomatis terunggah ke Google Drive kantor secara aman.
-4.  Klik **Kirim Laporan**.
-5.  *Progres Bar* aktivitas tersebut di dasbor akan otomatis bertambah secara akumulatif.
+    *   **File Bukti** atau **Link**: Pilih berkas pendukung untuk diunggah langsung ke Google Drive BPS atau masukkan tautan eksternal.
+5.  Klik **Kirim Laporan**.
+6.  **Kunci Laporan (Akhir Bulan)**: Jika semua laporan untuk bulan tersebut sudah selesai diinput, klik tombol **Kunci &amp; Ajukan Laporan**.
+    *   Setelah dikunci, pegawai tidak dapat lagi menambah, mengedit, atau menghapus laporan untuk bulan tersebut demi menjaga integritas data penilaian.
 
 ---
 
-### 3. Tahap Penilaian Bulanan (Oleh: Penilai / Admin)
-Di akhir bulan, Penilai melakukan evaluasi menyeluruh terhadap kinerja dan perilaku pegawai:
+### 3. Tahap Penilaian & Buka Kunci (Oleh: Penilai / Admin)
+Di akhir bulan, Penilai melakukan evaluasi berdasarkan pengajuan laporan pegawai:
 1.  Buka tab **Penilaian Bulanan**.
-2.  Pilih **Bulan Evaluasi** (misalnya: `Juli 2026`).
-3.  Aplikasi akan membagi pegawai menjadi dua kelompok:
-    *   🔴 **Belum Dinilai**: Pegawai yang belum mendapatkan nilai evaluasi pada bulan tersebut.
-    *   🟢 **Sudah Dinilai**: Pegawai yang telah dievaluasi.
-4.  Klik tombol **Beri Nilai** pada pegawai yang berada di daftar *Belum Dinilai*.
-5.  Isi formulir penilaian bulanan:
-    *   **Nilai Kinerja**: Pilih salah satu skala (*Sangat baik, Baik, Cukup baik, Tidak baik*).
-    *   **Nilai Aspek BerAKHLAK**: Berikan penilaian rating berupa skala `1` s.d `5` untuk masing-masing dari 7 pilar Core Values ASN:
-        1.  *Berorientasi Pelayanan*
-        2.  *Akuntabel*
-        3.  *Kompeten*
-        4.  *Harmonis*
-        5.  *Loyal*
-        6.  *Adaptif*
-        7.  *Kolaboratif*
-    *   **Catatan Evaluasi**: Berikan rekomendasi/catatan tertulis bagi pegawai bersangkutan.
-6.  Klik **Simpan Penilaian**.
+2.  Pilih **Pilih Periode Bulan** evaluasi.
+3.  Periksa daftar pegawai pada kolom **Belum Dinilai**:
+    *   🔴 **Belum Mengajukan**: Pegawai yang belum mengunci laporannya. Penilai tidak dapat memberi nilai (tombol *Beri Nilai* dinonaktifkan untuk menghindari penilaian data yang tidak lengkap).
+    *   🟡 **Menunggu Penilaian**: Pegawai yang sudah mengunci laporannya. Tombol **Beri Nilai** akan aktif.
+4.  Klik tombol **Beri Nilai** untuk memberikan rating Kinerja dan evaluasi Core Values BerAKHLAK ASN (skala 1-5).
+5.  **Buka Kunci Laporan (Re-open/Rollback)**: Jika pegawai melakukan kesalahan input atau lupa melaporkan sesuatu setelah laporannya dikunci, Penilai atau Admin dapat mengeklik tombol **Buka Kunci (ikon gembok terbuka)** di sebelah nama pegawai. Laporan pegawai pada bulan tersebut akan terbuka kembali untuk diedit.
 
 ---
 
