@@ -1943,7 +1943,7 @@
         ${notEvaluatedList.length === 0 ? `<div class="empty-row">Semua pegawai sudah dinilai pada bulan ini.</div>` :
           notEvaluatedList.map(u => {
             const hasPengajuan = (DATA.pengajuan || []).some(pg => pg.pegawaiId === u.id && pg.bulan === STATE.filterBulan && pg.status === "diajukan");
-            const canRate = CURRENT_USER.role === "admin" || hasPengajuan;
+            const canRate = hasPengajuan;
             
             const statusBadge = hasPengajuan 
               ? `<span class="badge" style="background:#FFF3E0;color:#E65100;font-size:10.5px;padding:2px 6px">Menunggu Penilaian</span>`
