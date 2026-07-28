@@ -2327,6 +2327,35 @@
       showToast(mode === "add" ? "Aktivitas berhasil ditambahkan." : "Aktivitas berhasil diperbarui.", "success");
     }
 
+    function showConfirm(title, message, onApprove) {
+      const html = `
+  <div class="modal-overlay" data-action="overlay-close">
+    <div class="modal-box" style="max-width:440px">
+      <div class="modal-head">
+        <h3>${esc(title)}</h3>
+        <button class="modal-close" data-action="close-modal">${icon("x")}</button>
+      </div>
+      <div class="modal-body" style="padding-top:10px">
+        <p style="margin:0 0 20px;line-height:1.5;color:var(--color-text-muted);font-size:14px">${esc(message)}</p>
+        <div class="modal-footer" style="margin-top:0;justify-content:flex-end;gap:10px">
+          <button class="btn-ghost" data-action="close-modal">Batal</button>
+          <button class="btn-primary" id="confirm-approve-btn">Ya, Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+      document.getElementById("modal-root").innerHTML = html;
+      afterRender();
+      
+      const btn = document.getElementById("confirm-approve-btn");
+      if (btn) {
+        btn.addEventListener("click", async () => {
+          closeModal();
+          await onApprove();
+        });
+      }
+    }
+
     function openLaporanModal(mode, payload) {
       const form = { id: "", aktivitasId: "", tanggal: todayStr(), uraian: "", capaian: "", buktiTipe: "link", buktiUrl: "", buktiNama: "", ...payload };
       window.__buktiFileObj = null;
@@ -2549,14 +2578,21 @@
             kegiatan: el.dataset.kegiatan, subKegiatan: el.dataset.subkegiatan,
           }); break;
           case "open-aktivitas-edit": { const a = DATA.aktivitas.find(a => a.id === id); openAktivitasModal("edit", a); break; }
-          case "delete-aktivitas": if (confirm("Hapus aktivitas ini beserta seluruh laporan terkait?")) {
-            await withBusy(el, async () => {
-              await deleteAktivitas(id);
-              await refreshAll();
-              renderContent();
-              showToast("Aktivitas berhasil dihapus.", "success");
-            })();
-          } break;
+          case "delete-aktivitas": {
+            showConfirm(
+              "Hapus Aktivitas",
+              "Apakah Anda yakin ingin menghapus aktivitas ini beserta seluruh laporan terkait? Tindakan ini tidak dapat dibatalkan.",
+              async () => {
+                await withBusy(el, async () => {
+                  await deleteAktivitas(id);
+                  await refreshAll();
+                  renderContent();
+                  showToast("Aktivitas berhasil dihapus.", "success");
+                })();
+              }
+            );
+            break;
+          }
           case "save-aktivitas": await withBusy(el, () => submitAktivitas(el.dataset.mode, el.dataset.id, {
             tujuan: el.dataset.tujuan, sasaran: el.dataset.sasaran, iku: el.dataset.iku,
             kegiatan: el.dataset.kegiatan, subKegiatan: el.dataset.subkegiatan,
@@ -2573,14 +2609,21 @@
             break;
           }
           case "open-lapor-edit": { const l = DATA.laporan.find(l => l.id === id); openLaporanModal("edit", l); break; }
-          case "delete-lapor": if (confirm("Hapus laporan ini?")) {
-            await withBusy(el, async () => {
-              await deleteLaporan(id);
-              await refreshAll();
-              renderContent();
-              showToast("Laporan berhasil dihapus.", "success");
-            })();
-          } break;
+          case "delete-lapor": {
+            showConfirm(
+              "Hapus Laporan Harian",
+              "Apakah Anda yakin ingin menghapus laporan harian ini?",
+              async () => {
+                await withBusy(el, async () => {
+                  await deleteLaporan(id);
+                  await refreshAll();
+                  renderContent();
+                  showToast("Laporan berhasil dihapus.", "success");
+                })();
+              }
+            );
+            break;
+          }
           case "save-lapor": await withBusy(el, () => submitLaporan(el.dataset.mode, el.dataset.id))(); break;
           case "set-bukti-tipe": {
             document.querySelectorAll(".toggle-opt").forEach(b => b.classList.toggle("active", b === el));
@@ -2591,40 +2634,58 @@
 
           case "open-user-add": openUserModal("add", { role: el.dataset.role || "pegawai" }); break;
           case "open-user-edit": { const u = DATA.users.find(u => u.id === id); openUserModal("edit", u); break; }
-          case "delete-user": if (confirm("Hapus pengguna ini? Penugasan dan laporan terkait akan terhapus.")) {
-            await withBusy(el, async () => {
-              await deleteUser(id);
-              await refreshAll();
-              renderContent();
-              showToast("Pengguna berhasil dihapus.", "success");
-            })();
-          } break;
+          case "delete-user": {
+            showConfirm(
+              "Hapus Pengguna",
+              "Apakah Anda yakin ingin menghapus pengguna ini? Penugasan dan laporan terkait juga akan terhapus.",
+              async () => {
+                await withBusy(el, async () => {
+                  await deleteUser(id);
+                  await refreshAll();
+                  renderContent();
+                  showToast("Pengguna berhasil dihapus.", "success");
+                })();
+              }
+            );
+            break;
+          }
           case "save-user": await withBusy(el, () => submitUser(el.dataset.mode, el.dataset.id))(); break;
 
           case "open-penilaian-add": { const u = DATA.users.find(u => u.id === id); openPenilaianModal("add", u); break; }
           case "open-penilaian-edit": { const p = DATA.penilaian.find(p => p.id === id); openPenilaianModal("edit", p); break; }
-          case "delete-penilaian": if (confirm("Hapus penilaian bulanan ini?")) {
-            await withBusy(el, async () => {
-              await apiPost("deletePenilaian", { id });
-              await refreshAll();
-              renderContent();
-              showToast("Penilaian berhasil dihapus.", "success");
-            })();
-          } break;
+          case "delete-penilaian": {
+            showConfirm(
+              "Hapus Penilaian",
+              "Apakah Anda yakin ingin menghapus penilaian bulanan ini?",
+              async () => {
+                await withBusy(el, async () => {
+                  await apiPost("deletePenilaian", { id });
+                  await refreshAll();
+                  renderContent();
+                  showToast("Penilaian berhasil dihapus.", "success");
+                })();
+              }
+            );
+            break;
+          }
           case "save-penilaian": await withBusy(el, () => submitPenilaian(el.dataset.mode, el.dataset.id, el.dataset.pegawaiid, el.dataset.bulan))(); break;
 
           case "close-modal": closeModal(); break;
           case "dismiss-toast": { const r = document.getElementById("toast-root"); if (r) r.innerHTML = ""; break; }
           case "submit-lapor-bulan": {
             const bulan = el.dataset.bulan;
-            if (confirm(`Kunci dan ajukan laporan Anda untuk bulan ${fmtMonth(bulan)}? Anda tidak akan dapat mengubah/menambah laporan untuk bulan tersebut.`)) {
-              await withBusy(el, async () => {
-                await apiPost("createPengajuan", { bulan });
-                await refreshAll();
-                renderContent();
-                showToast("Laporan berhasil dikunci dan diajukan.", "success");
-              })();
-            }
+            showConfirm(
+              "Kunci & Ajukan Laporan",
+              `Kunci dan ajukan laporan Anda untuk bulan ${fmtMonth(bulan)}? Setelah dikunci, Anda tidak dapat mengubah atau menambah laporan untuk bulan tersebut.`,
+              async () => {
+                await withBusy(el, async () => {
+                  await apiPost("createPengajuan", { bulan });
+                  await refreshAll();
+                  renderContent();
+                  showToast("Laporan berhasil dikunci dan diajukan.", "success");
+                })();
+              }
+            );
             break;
           }
           case "unlock-lapor-bulan": {
@@ -2632,14 +2693,18 @@
             const bulan = el.dataset.bulan;
             const peg = DATA.users.find(u => u.id === pegawaiId);
             const name = peg ? peg.nama : "Pegawai";
-            if (confirm(`Buka kembali kunci laporan ${name} untuk bulan ${fmtMonth(bulan)}?`)) {
-              await withBusy(el, async () => {
-                await apiPost("deletePengajuan", { pegawaiId, bulan });
-                await refreshAll();
-                renderContent();
-                showToast(`Kunci laporan ${name} berhasil dibuka.`, "success");
-              })();
-            }
+            showConfirm(
+              "Buka Kunci Laporan",
+              `Apakah Anda yakin ingin membuka kembali kunci laporan ${name} untuk bulan ${fmtMonth(bulan)}?`,
+              async () => {
+                await withBusy(el, async () => {
+                  await apiPost("deletePengajuan", { pegawaiId, bulan });
+                  await refreshAll();
+                  renderContent();
+                  showToast(`Kunci laporan ${name} berhasil dibuka.`, "success");
+                })();
+              }
+            );
             break;
           }
           case "download-csv-aktivitas": downloadCsvAktivitas(); break;
