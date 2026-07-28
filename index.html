@@ -1492,8 +1492,8 @@
       // Pegawai Terbaik (Employee of the Month)
       NAV.push({ id: "eotm", label: "Pegawai Terbaik", icon: "trophy" });
       
-      // Nilai Saya (Untuk Admin, Ketua Tim & Pegawai)
-      if (["admin", "ketua_tim", "pegawai"].includes(role)) {
+      // Nilai Saya (Untuk Admin & Pegawai)
+      if (["admin", "pegawai"].includes(role)) {
         NAV.push({ id: "nilaiku", label: "Nilai Saya", icon: "user-check" });
       }
       
