@@ -2343,7 +2343,7 @@
           </select></label>
         <div class="row2">
           <label class="field"><span class="field-label">Tanggal<span class="req"> *</span></span><input class="input" type="date" id="f-lap-tanggal" value="${form.tanggal}"></label>
-          <label class="field"><span class="field-label">Capaian Hari Ini<span class="req"> *</span></span><input class="input" type="number" min="0" id="f-lap-capaian" value="${esc(form.capaian)}"></label>
+          <label class="field"><span class="field-label">Capaian Hari Ini<span class="req"> *</span> <span id="f-lap-satuan-hint" style="color:var(--color-primary-light);font-weight:600;font-size:12px"></span></span><input class="input" type="number" min="0" id="f-lap-capaian" value="${esc(form.capaian)}"></label>
         </div>
         <label class="field"><span class="field-label">Uraian Pekerjaan<span class="req"> *</span></span>
           <textarea class="input" id="f-lap-uraian">${esc(form.uraian)}</textarea></label>
@@ -2369,6 +2369,22 @@
     </div>
   </div>`;
       document.getElementById("modal-root").innerHTML = html; afterRender();
+
+      const updateSatuanHint = () => {
+        const select = document.getElementById("f-lap-aktivitas");
+        const hintEl = document.getElementById("f-lap-satuan-hint");
+        if (!select || !hintEl) return;
+        const aktId = select.value;
+        const akt = DATA.aktivitas.find(a => a.id === aktId);
+        if (akt && akt.satuan) {
+          hintEl.textContent = `(Satuan: ${akt.satuan})`;
+        } else {
+          hintEl.textContent = "";
+        }
+      };
+
+      updateSatuanHint();
+      document.getElementById("f-lap-aktivitas").addEventListener("change", updateSatuanHint);
 
       const fileInput = document.getElementById("f-lap-file");
       if (fileInput) {
