@@ -1252,10 +1252,11 @@
     <div class="login-card">
       <div class="login-logo">${icon("clipboard-check", 'style="color:#fff;width:24px;height:24px"')}</div>
       <h2 style="margin:0 0 4px;font-family:var(--font-display);color:var(--color-primary);font-size:22px">Manajemen Kinerja Tim</h2>
-      <p style="margin:0 0 6px;color:var(--color-text-muted);font-size:13px">BPS Kabupaten Puncak \u2014 Rencana Kinerja &amp; Laporan Aktivitas Harian</p>
+      <p style="margin:0 0 6px;color:var(--color-text-muted);font-size:13px">BPS Kabupaten Puncak — Rencana Kinerja &amp; Laporan Aktivitas Harian</p>
       <div id="login-error"></div>
       <div class="modal-hint" style="margin-top:12px">Belum ada pengguna terdaftar di Spreadsheet. Buat akun pertama (disarankan Ketua Tim/Admin) untuk mulai.</div>
-      <label class="field"><span class="field-label">Nama Lengkap</span><input class="input" id="login-nama" placeholder="Nama Anda"></label>
+      <label class="field"><span class="field-label">Email / Username</span><input class="input" id="login-username" placeholder="Alamat email atau username Anda"></label>
+      <label class="field"><span class="field-label">Nama Lengkap</span><input class="input" id="login-nama" placeholder="Nama Lengkap Anda"></label>
       <label class="field"><span class="field-label">Peran</span>
         <select class="input" id="login-role">
           <option value="admin">Admin</option>
@@ -1276,9 +1277,10 @@
     <div class="login-card">
       <div class="login-logo">${icon("clipboard-check", 'style="color:#fff;width:24px;height:24px"')}</div>
       <h2 style="margin:0 0 4px;font-family:var(--font-display);color:var(--color-primary);font-size:22px">Daftar Akun Baru</h2>
-      <p style="margin:0 0 6px;color:var(--color-text-muted);font-size:13px">BPS Kabupaten Puncak \u2014 Akses Pertama Tamu</p>
+      <p style="margin:0 0 6px;color:var(--color-text-muted);font-size:13px">BPS Kabupaten Puncak — Akses Pertama Tamu</p>
       <div id="login-error"></div>
       
+      <label class="field"><span class="field-label">Email / Username</span><input class="input" id="login-username" placeholder="Alamat email atau username Anda"></label>
       <label class="field"><span class="field-label">Nama Lengkap</span><input class="input" id="login-nama" placeholder="Nama Lengkap Anda"></label>
       <label class="field"><span class="field-label">Buat Kata Sandi</span><input class="input" type="password" id="login-password" placeholder="Minimal 6 karakter"></label>
       <button class="btn-primary" style="width:100%;justify-content:center" data-action="register-submit">${icon("user-plus")} Daftar Akun</button>
@@ -1294,10 +1296,10 @@
     <div class="login-card">
       <div class="login-logo">${icon("clipboard-check", 'style="color:#fff;width:24px;height:24px"')}</div>
       <h2 style="margin:0 0 4px;font-family:var(--font-display);color:var(--color-primary);font-size:22px">Manajemen Kinerja Tim</h2>
-      <p style="margin:0 0 6px;color:var(--color-text-muted);font-size:13px">BPS Kabupaten Puncak \u2014 Rencana Kinerja &amp; Laporan Aktivitas Harian</p>
+      <p style="margin:0 0 6px;color:var(--color-text-muted);font-size:13px">BPS Kabupaten Puncak — Rencana Kinerja &amp; Laporan Aktivitas Harian</p>
       <div id="login-error"></div>
       
-      <label class="field"><span class="field-label">Nama Lengkap</span><input class="input" id="login-nama" placeholder="Nama Lengkap Anda"></label>
+      <label class="field"><span class="field-label">Email / Username</span><input class="input" id="login-username" placeholder="Masukkan email atau username Anda"></label>
       <label class="field"><span class="field-label">Kata Sandi</span><input class="input" type="password" id="login-password" placeholder="Kata sandi Anda"></label>
       <button class="btn-primary" style="width:100%;justify-content:center" data-action="login-submit">${icon("log-in")} Masuk</button>
       
@@ -1311,11 +1313,11 @@
       if (el) el.innerHTML = `<div class="modal-hint" style="background:#FDECEC;color:var(--color-danger);margin-top:12px">${esc(msg)}</div>`;
     }
     async function loginSubmit() {
-      const nama = document.getElementById("login-nama").value.trim();
+      const username = document.getElementById("login-username").value.trim();
       const password = document.getElementById("login-password").value;
-      if (!nama || !password) return;
+      if (!username || !password) return;
       try {
-        const { user, token } = await apiPost("login", { nama, password });
+        const { user, token } = await apiPost("login", { username, password });
         TOKEN = token; saveToken(token);
         CURRENT_USER = user;
         await refreshAll();
@@ -1325,25 +1327,27 @@
       } catch (e) { showLoginError(e.message); }
     }
     async function registerSubmit() {
+      const username = document.getElementById("login-username").value.trim();
       const nama = document.getElementById("login-nama").value.trim();
       const password = document.getElementById("login-password").value;
-      if (!nama || !password) { showLoginError("Nama dan kata sandi wajib diisi."); return; }
+      if (!username || !nama || !password) { showLoginError("Semua kolom wajib diisi."); return; }
       if (password.length < 6) { showLoginError("Kata sandi minimal 6 karakter."); return; }
       try {
-        const result = await apiPost("register", { nama, password });
+        const result = await apiPost("register", { username, nama, password });
         showToast(result.message || "Pendaftaran berhasil. Silakan login kembali.", "success");
         STATE.loginMode = "login";
         render();
       } catch (e) { showLoginError(e.message); }
     }
     async function registerBootstrap() {
+      const username = document.getElementById("login-username").value.trim();
       const nama = document.getElementById("login-nama").value.trim();
       const role = document.getElementById("login-role").value;
       const password = document.getElementById("login-password").value;
-      if (!nama || !password) { showLoginError("Nama dan kata sandi wajib diisi."); return; }
+      if (!username || !nama || !password) { showLoginError("Semua kolom wajib diisi."); return; }
       if (password.length < 6) { showLoginError("Kata sandi minimal 6 karakter."); return; }
       try {
-        const result = await apiPost("register", { nama, role, password });
+        const result = await apiPost("register", { username, nama, role, password });
         if (result.token) {
           TOKEN = result.token; saveToken(TOKEN);
           CURRENT_USER = result.user;
@@ -1850,7 +1854,9 @@
     function userRow(u) {
       const isAdmin = CURRENT_USER.role === "admin";
       const laps = DATA.laporan.filter(l => l.pegawaiId === u.id).length;
-      const meta = u.role === 'pegawai' ? laps + " laporan harian" : u.role.replace("_", " ").toUpperCase();
+      const roleStr = u.role === 'pegawai' ? laps + " laporan harian" : u.role.replace("_", " ").toUpperCase();
+      const userHandle = u.username ? `@${u.username}` : "";
+      const meta = roleStr + (userHandle ? ` · ${userHandle}` : "");
       
       return `<div class="person-row">
     <div style="display:flex;align-items:center;gap:10px">
@@ -2147,7 +2153,7 @@
     function closeModal() { document.getElementById("modal-root").innerHTML = ""; afterRender(); }
 
     function openUserModal(mode, payload) {
-      const form = { id: "", nama: "", role: "pegawai", ...payload };
+      const form = { id: "", username: "", nama: "", role: "pegawai", ...payload };
       const isSelfOrAdmin = CURRENT_USER.role === "admin";
       
       const html = `
@@ -2155,6 +2161,7 @@
     <div class="modal-box">
       <div class="modal-head"><h3>${mode === "add" ? "Tambah" : "Ubah"} Pengguna</h3><button class="modal-close" data-action="close-modal">${icon("x")}</button></div>
       <div class="modal-body">
+        <label class="field"><span class="field-label">Email / Username<span class="req"> *</span></span><input class="input" id="f-user-username" placeholder="Contoh: ihzakarunia atau email" value="${esc(form.username || form.nama)}"></label>
         <label class="field"><span class="field-label">Nama Lengkap<span class="req"> *</span></span><input class="input" id="f-user-nama" value="${esc(form.nama)}"></label>
         <label class="field"><span class="field-label">Peran</span>
           <select class="input" id="f-user-role" ${!isSelfOrAdmin ? 'disabled' : ''}>
@@ -2176,13 +2183,15 @@
       document.getElementById("modal-root").innerHTML = html; afterRender();
     }
     async function submitUser(mode, id) {
+      const username = document.getElementById("f-user-username").value.trim().toLowerCase();
       const nama = document.getElementById("f-user-nama").value.trim();
       const role = document.getElementById("f-user-role").value;
       const password = document.getElementById("f-user-password").value;
+      if (!username) { showToast("Email / Username wajib diisi.", "error"); return; }
       if (!nama) { showToast("Nama lengkap wajib diisi.", "error"); return; }
       if (mode === "add" && (!password || password.length < 6)) { showToast("Kata sandi wajib diisi, minimal 6 karakter.", "error"); return; }
-      if (mode === "add") await addUser({ nama, role, password });
-      else await editUser(id, Object.assign({ nama, role }, password ? { password } : {}));
+      if (mode === "add") await addUser({ username, nama, role, password });
+      else await editUser(id, Object.assign({ username, nama, role }, password ? { password } : {}));
       await refreshAll();
       const isSelfEdit = mode === "edit" && id === CURRENT_USER.id;
       if (isSelfEdit) {

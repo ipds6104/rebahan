@@ -32,7 +32,7 @@ const SHEETS = {
 };
 
 const HEADERS = {
-  Users: ["id", "nama", "role", "passwordHash", "salt", "createdAt"],
+  Users: ["id", "username", "nama", "role", "passwordHash", "salt", "createdAt"],
   Sessions: ["token", "userId", "expiresAt"],
   Aktivitas: ["id", "tujuan", "sasaran", "iku", "kegiatan", "subKegiatan",
     "nama", "target", "satuan", "periodeMulai", "periodeSelesai",
@@ -194,7 +194,7 @@ function cleanupExpiredSessions() {
 
 function sanitizeUser(u) {
   if (!u) return null;
-  return { id: u.id, nama: u.nama, role: u.role, createdAt: u.createdAt };
+  return { id: u.id, username: u.username || u.nama, nama: u.nama, role: u.role, createdAt: u.createdAt };
 }
 
 /* ========================= RESPONSE HELPER ========================= */
@@ -342,10 +342,14 @@ function doPost(e) {
 /* ========================= AUTH HANDLERS ========================= */
 function handleRegister(body) {
   const nama = (body.nama || "").trim();
+  let username = (body.username || "").trim().toLowerCase();
+  if (!username && nama) {
+    username = nama.replace(/\s+/g, "").toLowerCase();
+  }
   const role = body.role || "tamu"; // Default pendaftaran mandiri adalah tamu
   const password = body.password || "";
-  if (!nama || !password) {
-    throw new Error("Nama dan kata sandi wajib diisi.");
+  if (!nama || !username || !password) {
+    throw new Error("Username, nama lengkap, dan kata sandi wajib diisi.");
   }
   const users = sheetToObjects(SHEETS.USERS);
   const isBootstrap = users.length === 0;
@@ -368,13 +372,21 @@ function handleRegister(body) {
     }
   }
 
-  const exists = users.find(u => String(u.nama).toLowerCase() === nama.toLowerCase());
-  if (exists) throw new Error("Nama pengguna sudah digunakan.");
+  const exists = users.find(u => {
+    const uName = String(u.username || "").toLowerCase();
+    const uReal = String(u.nama || "").toLowerCase();
+    return uName === username || uReal === nama.toLowerCase();
+  });
+  if (exists) throw new Error("Username atau Nama Lengkap sudah digunakan.");
 
   const salt = makeSalt();
   const user = {
-    id: newId("usr"), nama, role,
-    passwordHash: hashPassword(password, salt), salt,
+    id: newId("usr"),
+    username,
+    nama,
+    role,
+    passwordHash: hashPassword(password, salt),
+    salt,
     createdAt: Date.now(),
   };
   appendObject(SHEETS.USERS, user);
@@ -390,14 +402,18 @@ function handleRegister(body) {
 }
 
 function handleLogin(body) {
-  const nama = (body.nama || "").trim();
+  const loginId = (body.username || body.nama || "").trim().toLowerCase();
   const password = body.password || "";
-  if (!nama || !password) throw new Error("Nama dan kata sandi wajib diisi.");
+  if (!loginId || !password) throw new Error("Username/Email dan kata sandi wajib diisi.");
   const users = sheetToObjects(SHEETS.USERS);
-  const user = users.find(u => String(u.nama).toLowerCase() === nama.toLowerCase());
-  if (!user) throw new Error("Nama pengguna atau kata sandi salah.");
+  const user = users.find(u => {
+    const uName = String(u.username || "").toLowerCase();
+    const uReal = String(u.nama || "").toLowerCase();
+    return uName === loginId || uReal === loginId;
+  });
+  if (!user) throw new Error("Nama pengguna/email atau kata sandi salah.");
   const hash = hashPassword(password, user.salt);
-  if (hash !== user.passwordHash) throw new Error("Nama pengguna atau kata sandi salah.");
+  if (hash !== user.passwordHash) throw new Error("Nama pengguna/email atau kata sandi salah.");
   const token = createSession(user.id);
   return { user: sanitizeUser(user), token };
 }
@@ -414,6 +430,7 @@ function handleUpdateUser(body) {
     throw new Error("Anda tidak memiliki akses untuk mengubah pengguna lain.");
   }
   const patch = {};
+  if (body.username) patch.username = String(body.username).trim().toLowerCase();
   if (body.nama) patch.nama = String(body.nama).trim();
   if (body.role) {
     if (current.role !== "admin") {
