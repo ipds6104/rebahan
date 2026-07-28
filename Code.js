@@ -686,17 +686,28 @@ function handleCreatePengajuan(body) {
 
 function handleDeletePengajuan(body) {
   const current = requireUser(body.token);
-  if (current.role !== "admin" && current.role !== "penilai" && current.role !== "ketua_tim") {
-    throw new Error("Akses ditolak. Hanya Penilai atau Admin yang dapat membuka kunci laporan.");
-  }
+  const pegawaiId = body.pegawaiId || current.id;
   
-  if (!body.pegawaiId || !body.bulan) {
-    throw new Error("Pegawai dan bulan wajib ditentukan.");
+  if (!body.bulan) {
+    throw new Error("Bulan wajib ditentukan.");
   }
   const bulan = String(body.bulan).slice(0, 7);
   
+  // Jika pegawai mencoba membatalkan kuncinya sendiri
+  if (current.id === pegawaiId) {
+    const hasPenilaian = sheetToObjects(SHEETS.PENILAIAN).some(p => p.pegawaiId === pegawaiId && p.bulan === bulan);
+    if (hasPenilaian) {
+      throw new Error("Laporan Anda sudah dinilai oleh Penilai. Silakan hubungi Penilai Anda untuk membuka kunci.");
+    }
+  } else {
+    // Jika orang lain yang mencoba menghapus, harus admin, penilai, atau ketua_tim
+    if (current.role !== "admin" && current.role !== "penilai" && current.role !== "ketua_tim") {
+      throw new Error("Akses ditolak. Anda tidak berwenang membuka kunci laporan ini.");
+    }
+  }
+  
   const list = sheetToObjects(SHEETS.PENGAJUAN);
-  const exists = list.find(p => p.pegawaiId === body.pegawaiId && p.bulan === bulan);
+  const exists = list.find(p => p.pegawaiId === pegawaiId && p.bulan === bulan);
   if (exists) {
     deleteRowById(SHEETS.PENGAJUAN, exists.id);
   }
