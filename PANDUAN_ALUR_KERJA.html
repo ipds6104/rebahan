@@ -347,9 +347,27 @@
 
     /* ── Print overrides ── */
     @media print {
-      body { background: #fff; }
-      .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .section, .step-section { page-break-inside: avoid; }
+      @page {
+        margin: 0;
+      }
+      body {
+        background: #fff;
+        padding: 20mm;
+      }
+      .cover {
+        margin: -20mm -20mm 0 -20mm;
+        padding: 60mm 30mm 40mm !important;
+        height: 297mm; /* Full A4 height */
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .content {
+        padding: 10mm 0 0;
+      }
+      .section, .step-section {
+        page-break-inside: avoid;
+      }
     }
   </style>
 </head>
@@ -453,10 +471,10 @@ graph TD
     I -->|9. Umpan Balik Instan| J["🧑‍💼 Pegawai: Tab Nilai Saya"]
     H -->|Buka Kunci Laporan jika Perlu| G
 
-    style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
-    style C fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    style H fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    style J fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#1B2430
+    style C fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#1B2430
+    style H fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#1B2430
+    style J fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#1B2430
       </div>
     </div>
   </div>
@@ -614,7 +632,7 @@ graph TD
     theme: 'base',
     themeVariables: {
       primaryColor: '#12335F',
-      primaryTextColor: '#1B2430',
+      primaryTextColor: '#FFFFFF',
       primaryBorderColor: '#2C5490',
       lineColor: '#66748A',
       secondaryColor: '#F4F6F9',
