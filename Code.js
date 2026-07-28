@@ -708,9 +708,10 @@ function handleDeletePengajuan(body) {
   
   const list = sheetToObjects(SHEETS.PENGAJUAN);
   const exists = list.find(p => p.pegawaiId === pegawaiId && p.bulan === bulan);
-  if (exists) {
-    deleteRowById(SHEETS.PENGAJUAN, exists.id);
+  if (!exists) {
+    throw new Error(`Pengajuan untuk pegawai ID ${pegawaiId} pada bulan ${bulan} tidak ditemukan.`);
   }
+  deleteRowById(SHEETS.PENGAJUAN, exists.id);
   return { ok: true };
 }
 
