@@ -2333,12 +2333,12 @@
     <div class="modal-box" style="max-width:440px">
       <div class="modal-head">
         <h3>${esc(title)}</h3>
-        <button class="modal-close" data-action="close-modal">${icon("x")}</button>
+        <button class="modal-close" data-action="close-modal" id="confirm-close-btn">${icon("x")}</button>
       </div>
       <div class="modal-body" style="padding-top:10px">
         <p style="margin:0 0 20px;line-height:1.5;color:var(--color-text-muted);font-size:14px">${esc(message)}</p>
         <div class="modal-footer" style="margin-top:0;justify-content:flex-end;gap:10px">
-          <button class="btn-ghost" data-action="close-modal">Batal</button>
+          <button class="btn-ghost" data-action="close-modal" id="confirm-cancel-btn">Batal</button>
           <button class="btn-primary" id="confirm-approve-btn">Ya, Lanjutkan</button>
         </div>
       </div>
@@ -2348,10 +2348,21 @@
       afterRender();
       
       const btn = document.getElementById("confirm-approve-btn");
+      const cancelBtn = document.getElementById("confirm-cancel-btn");
+      const closeBtn = document.getElementById("confirm-close-btn");
+      
       if (btn) {
         btn.addEventListener("click", async () => {
-          closeModal();
-          await onApprove();
+          if (cancelBtn) cancelBtn.disabled = true;
+          if (closeBtn) closeBtn.disabled = true;
+          
+          await withBusy(btn, async () => {
+            await onApprove();
+            closeModal();
+          })();
+          
+          if (cancelBtn) cancelBtn.disabled = false;
+          if (closeBtn) closeBtn.disabled = false;
         });
       }
     }
