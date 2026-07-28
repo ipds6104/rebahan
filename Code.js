@@ -107,6 +107,7 @@ function appendObject(sheetName, obj) {
   const headers = HEADERS[sheetName];
   const row = headers.map(h => (obj[h] !== undefined ? obj[h] : ""));
   sheet.appendRow(row);
+  SpreadsheetApp.flush();
   return obj;
 }
 
@@ -125,6 +126,7 @@ function updateObjectById(sheetName, id, patch) {
   });
   
   range.setValues([values]);
+  SpreadsheetApp.flush();
   
   const result = {};
   const dateCols = ["tanggal", "periodeMulai", "periodeSelesai", "createdAt"];
@@ -142,6 +144,7 @@ function deleteRowById(sheetName, id) {
   const rowIdx = findRowIndexById(sheetName, id);
   if (rowIdx === -1) return false;
   getSheet(sheetName).deleteRow(rowIdx);
+  SpreadsheetApp.flush();
   return true;
 }
 
@@ -158,6 +161,7 @@ function deleteRowsByCol(sheetName, colName, value) {
   for (let j = rowsToDelete.length - 1; j >= 0; j--) {
     sheet.deleteRow(rowsToDelete[j]);
   }
+  SpreadsheetApp.flush();
   return rowsToDelete.length;
 }
 
