@@ -19,6 +19,87 @@ graph TD
 
 ---
 
+## 📊 Struktur Database Google Sheets (Tab & Kolom)
+
+Agar aplikasi [index.html](file:///home/ihza/Projects/rebahan/index.html) dapat berfungsi dengan baik, Spreadsheet Google Anda **harus memiliki 4 tab** dengan kolom-kolom berikut:
+
+### 1. Tab `users`
+Mencatat akun Ketua Tim dan seluruh pegawai pelapor.
+- **Nama Tab**: `users`
+- **Kolom & Tipe Data**:
+  - `id` (Teks - ID unik, contoh: `usr_01`)
+  - `nama` (Teks - Nama lengkap pegawai)
+  - `role` (Teks - Peran user: `ketua_tim` atau `pegawai`)
+  - `password` (Teks - Hash sandi/plaintext)
+- **Contoh Pengisian**:
+  | id | nama | role | password |
+  | :--- | :--- | :--- | :--- |
+  | usr_01 | Ihza Karunia | ketua_tim | hash_sandi_anda_atau_password |
+  | usr_02 | Budi Santoso | pegawai | password_budi_123 |
+
+---
+
+### 2. Tab `referensi`
+Menampung daftar rencana kerja bertingkat (Tujuan sampai Sub Kegiatan) untuk acuan program BPS Puncak.
+- **Nama Tab**: `referensi`
+- **Kolom & Tipe Data**:
+  - `tujuan` (Teks)
+  - `sasaran` (Teks)
+  - `iku` (Teks - Indikator Kinerja Utama)
+  - `kegiatan` (Teks)
+  - `subKegiatan` (Teks - Nama Sub Kegiatan)
+- **Contoh Pengisian**:
+  | tujuan | sasaran | iku | kegiatan | subKegiatan |
+  | :--- | :--- | :--- | :--- | :--- |
+  | Meningkatkan Kualitas Data | Terwujudnya Data Statistik Berkualitas | Indeks Kepuasan Pengguna | Penyusunan Publikasi Daerah | Koordinasi Penyusunan Publikasi |
+  | Meningkatkan Kualitas Data | Terwujudnya Data Statistik Berkualitas | Indeks Kepuasan Pengguna | Penyusunan Publikasi Daerah | Pengumpulan & Rekonsiliasi Data |
+
+---
+
+### 3. Tab `aktivitas`
+Menyimpan daftar rencana aktivitas kerja spesifik beserta target dan penugasan pegawai (PIC).
+- **Nama Tab**: `aktivitas`
+- **Kolom & Tipe Data**:
+  - `id` (Teks - ID unik aktivitas, contoh: `akt_101`)
+  - `tujuan` (Teks - Mengacu ke `referensi.tujuan`)
+  - `sasaran` (Teks - Mengacu ke `referensi.sasaran`)
+  - `iku` (Teks - Mengacu ke `referensi.iku`)
+  - `kegiatan` (Teks - Mengacu ke `referensi.kegiatan`)
+  - `subKegiatan` (Teks - Mengacu ke `referensi.subKegiatan`)
+  - `nama` (Teks - Detail aktivitas yang dikerjakan)
+  - `target` (Angka - Jumlah target)
+  - `satuan` (Teks - Satuan target, misal: `Dokumen`, `Berkas`, `Laporan`)
+  - `assignedTo` (Teks - Array ID Pegawai dipisahkan koma, contoh: `["usr_02"]` atau `usr_02`)
+  - `periodeMulai` (Tanggal - format `YYYY-MM-DD`)
+  - `periodeSelesai` (Tanggal - format `YYYY-MM-DD`)
+- **Contoh Pengisian**:
+  | id | tujuan | sasaran | iku | kegiatan | subKegiatan | nama | target | satuan | assignedTo | periodeMulai | periodeSelesai |
+  | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+  | akt_101 | Meningkatkan Kualitas Data | Terwujudnya Data Statistik Berkualitas | Indeks Kepuasan Pengguna | Penyusunan Publikasi Daerah | Koordinasi Penyusunan Publikasi | Pengumpulan data sektoral OPD | 12 | Dokumen | ["usr_02"] | 2026-07-01 | 2026-07-31 |
+
+---
+
+### 4. Tab `laporan`
+Menampung realisasi harian/bukti kerja yang dilaporkan pegawai.
+- **Nama Tab**: `laporan`
+- **Kolom & Tipe Data**:
+  - `id` (Teks - ID unik laporan, contoh: `lap_501`)
+  - `aktivitasId` (Teks - ID aktivitas terkait, contoh: `akt_101`)
+  - `pegawaiId` (Teks - ID pegawai pelapor, contoh: `usr_02`)
+  - `tanggal` (Tanggal realisasi - format `YYYY-MM-DD`)
+  - `capaian` (Angka - Jumlah capaian pada tanggal tersebut)
+  - `uraian` (Teks - Rincian pekerjaan hari ini)
+  - `buktiTipe` (Teks - `link` atau `file`)
+  - `buktiNama` (Teks - Nama file bukti, contoh: `bukti_survei.jpg`, kosongkan jika tipe `link`)
+  - `buktiUrl` (Teks - Link Google Drive/Dokumen eksternal)
+  - `createdAt` (Angka/Teks - Timestamp waktu entri dibuat, contoh: `1772186400000`)
+- **Contoh Pengisian**:
+  | id | aktivitasId | pegawaiId | tanggal | capaian | uraian | buktiTipe | buktiNama | buktiUrl | createdAt |
+  | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+  | lap_501 | akt_101 | usr_02 | 2026-07-28 | 2 | Melakukan entri 2 data publikasi daerah | link | | https://drive.google.com/open?id=123_abc | 1772186400000 |
+
+---
+
 ## ⚠️ Analisis Kebocoran & Celah Keamanan (Secrets & Credentials)
 
 > [!WARNING]
