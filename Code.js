@@ -270,7 +270,7 @@ function doGet(e) {
     }
 
     if (action === "users") {
-      if (["admin", "ketua_tim", "penilai"].indexOf(activeUser.role) === -1) {
+      if (["admin", "ketua_tim", "penilai", "pegawai"].indexOf(activeUser.role) === -1) {
         throw new Error("Akses ditolak.");
       }
       return jsonResponse(sheetToObjects(SHEETS.USERS).map(sanitizeUser));
