@@ -79,8 +79,12 @@ function sheetToObjects(sheetName) {
     const obj = {};
     headers.forEach((h, idx) => {
       let v = values[i][idx];
-      if (v instanceof Date && (h === "tanggal" || h === "periodeMulai" || h === "periodeSelesai")) {
-        v = Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd");
+      if (v instanceof Date) {
+        if (h === "tanggal" || h === "periodeMulai" || h === "periodeSelesai") {
+          v = Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        } else if (h === "bulan") {
+          v = Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM");
+        }
       }
       obj[h] = v;
     });
