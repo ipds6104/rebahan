@@ -1170,7 +1170,8 @@
       filterDariTanggal: "", 
       filterSampaiTanggal: "",
       loginMode: "login",
-      filterBulan: new Date().toISOString().slice(0, 7)
+      filterBulan: new Date().toISOString().slice(0, 7),
+      eotmBulan: new Date().toISOString().slice(0, 7)
     };
 
     async function refreshAll() {
@@ -1427,6 +1428,9 @@
       
       // Rekap Tim (Untuk Admin, Ketua Tim, Penilai, Pegawai)
       NAV.push({ id: "rekap", label: "Rekap Tim", icon: "bar-chart-3" });
+      
+      // Pegawai Terbaik (Employee of the Month)
+      NAV.push({ id: "eotm", label: "Pegawai Terbaik", icon: "trophy" });
       
       // Nilai Saya (Untuk Admin, Ketua Tim & Pegawai)
       if (["admin", "ketua_tim", "pegawai"].includes(role)) {
@@ -2091,6 +2095,280 @@
       `;
     }
 
+    // --- Employee of the Month logic & components ---
+    const _eotmCache = {};
+    
+    function getWinnerForMonth(targetMonth) {
+      const listPenilaian = (DATA.penilaian || []).filter(p => p.bulan === targetMonth);
+      if (listPenilaian.length === 0) return null;
+      
+      const kinMap = { "Sangat baik": 40, "Baik": 30, "Cukup baik": 20, "Tidak baik": 10 };
+      
+      const candidates = listPenilaian.map(p => {
+        const u = DATA.users.find(usr => usr.id === p.pegawaiId);
+        if (!u) return null;
+        
+        const kinVal = kinMap[p.nilaiKinerja] || 0;
+        const berakhlakSum = (p.berorientasiPelayanan || 0) + (p.akuntabel || 0) + (p.kompeten || 0) +
+                             (p.harmonis || 0) + (p.loyal || 0) + (p.adaptif || 0) + (p.kolaboratif || 0);
+        const totalScore = kinVal + berakhlakSum;
+        
+        const reports = (DATA.laporan || []).filter(l => l.pegawaiId === p.pegawaiId && String(l.tanggal).slice(0, 7) === targetMonth);
+        const reportCount = reports.length;
+        
+        const earliestReport = reports.length > 0 ? Math.min(...reports.map(l => Number(l.createdAt) || Infinity)) : Infinity;
+        
+        return {
+          pegawaiId: p.pegawaiId,
+          user: u,
+          penilaian: p,
+          score: totalScore,
+          reportCount: reportCount,
+          earliestReport: earliestReport,
+          prevWins: 0,
+          randomVal: 0
+        };
+      }).filter(Boolean);
+      
+      if (candidates.length === 0) return null;
+      
+      candidates.forEach(cand => {
+        cand.prevWins = getPrevWinsCount(cand.pegawaiId, targetMonth);
+        cand.randomVal = getDeterministicRandom(cand.pegawaiId, targetMonth);
+      });
+      
+      candidates.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.reportCount !== a.reportCount) return b.reportCount - a.reportCount;
+        if (a.earliestReport !== b.earliestReport) return a.earliestReport - b.earliestReport;
+        if (a.prevWins !== b.prevWins) return a.prevWins - b.prevWins;
+        return b.randomVal - a.randomVal;
+      });
+      
+      return {
+        winner: candidates[0],
+        allCandidates: candidates
+      };
+    }
+
+    function getWinnerForMonthCached(bulan) {
+      if (_eotmCache[bulan] !== undefined) return _eotmCache[bulan];
+      const res = getWinnerForMonth(bulan);
+      _eotmCache[bulan] = res ? res.winner.pegawaiId : null;
+      return _eotmCache[bulan];
+    }
+
+    function getPrevWinsCount(pegawaiId, targetMonth) {
+      const allMonths = Array.from(new Set((DATA.penilaian || []).map(p => p.bulan)))
+        .filter(b => b < targetMonth)
+        .sort();
+        
+      let wins = 0;
+      allMonths.forEach(m => {
+        const winnerId = getWinnerForMonthCached(m);
+        if (winnerId === pegawaiId) wins++;
+      });
+      return wins;
+    }
+
+    function getDeterministicRandom(empId, bulan) {
+      const str = empId + "_" + bulan;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash) % 1000;
+    }
+
+    function renderEotmTab() {
+      if (!STATE.eotmBulan) {
+        STATE.eotmBulan = new Date().toISOString().slice(0, 7);
+      }
+      const selBulan = STATE.eotmBulan;
+      
+      for (const k in _eotmCache) delete _eotmCache[k];
+      
+      const eotmData = getWinnerForMonth(selBulan);
+      
+      const selectHtml = `
+        <label class="field" style="margin:0;max-width:220px">
+          <span class="field-label">Pilih Periode Penghargaan</span>
+          <input class="input" type="month" id="eotm-bulan-select" value="${selBulan}">
+        </label>
+      `;
+
+      if (!eotmData) {
+        return `
+          ${sectionHead("Penghargaan", "Employee of the Month", "Apresiasi pencapaian kinerja terbaik dan penerapan nilai BerAKHLAK pegawai BPS Puncak.")}
+          <div style="margin-bottom:20px">${selectHtml}</div>
+          <div class="panel" style="padding:40px 20px;text-align:center;background:#fff;border-radius:12px;border:1px dashed var(--color-border)">
+            <div style="font-size:48px;margin-bottom:15px">🎖️</div>
+            <h3 style="margin:0 0 8px;font-family:var(--font-display);color:var(--color-text)">Belum Ada Penilaian</h3>
+            <p style="margin:0 auto;max-width:400px;font-size:13px;color:var(--color-text-muted)">Belum ada pegawai yang dinilai untuk periode ${fmtMonth(selBulan)}. Silakan hubungi Penilai atau Admin untuk mengisi penilaian bulanan pegawai.</p>
+          </div>
+        `;
+      }
+      
+      const { winner, allCandidates } = eotmData;
+      const u = winner.user;
+      
+      const avgBerakhlak = ((winner.penilaian.berorientasiPelayanan || 0) + (winner.penilaian.akuntabel || 0) + (winner.penilaian.kompeten || 0) +
+                       (winner.penilaian.harmonis || 0) + (winner.penilaian.loyal || 0) + (winner.penilaian.adaptif || 0) + (winner.penilaian.kolaboratif || 0)) / 7;
+      
+      const heroCard = `
+        <div class="eotm-hero-card" style="background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%); color: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3); margin-bottom: 30px; position: relative; overflow: hidden; display: flex; gap: 30px; align-items: center; flex-wrap: wrap;">
+          <div style="position: absolute; right: -20px; top: -20px; font-size: 180px; opacity: 0.08; pointer-events: none; font-weight: bold; transform: rotate(15deg);">🏆</div>
+          
+          <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 110px; height: 110px; border-radius: 50%; background: var(--color-accent); display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: bold; color: #fff; border: 4px solid #F59E0B; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);">
+              ${esc(u.nama.slice(0, 1).toUpperCase())}
+            </div>
+            <div style="position: absolute; bottom: -5px; right: -5px; background: #F59E0B; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 3px solid #0F172A;" title="Winner">👑</div>
+          </div>
+          
+          <div style="flex: 1; min-width: 250px;">
+            <div style="background: rgba(245, 158, 11, 0.2); color: #FBBF24; font-size: 10.5px; font-weight: bold; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em; font-family: var(--font-display);">
+              ${icon("award", 'style="width:12px;height:12px"')} Employee of The Month
+            </div>
+            <h2 style="margin: 0 0 6px; font-family: var(--font-display); font-size: 24px; font-weight: 700; color: #fff;">${esc(u.nama)}</h2>
+            <p style="margin: 0 0 16px; color: #94A3B8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">${esc(u.role.replace("_", " "))}</p>
+            
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <div style="background: rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 9.5px; color: #94A3B8; text-transform: uppercase; margin-bottom: 2px;">Nilai Kinerja</div>
+                <div style="font-size: 14.5px; font-weight: bold; color: #10B981;">${winner.penilaian.nilaiKinerja}</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 9.5px; color: #94A3B8; text-transform: uppercase; margin-bottom: 2px;">Indeks BerAKHLAK</div>
+                <div style="font-size: 14.5px; font-weight: bold; color: #3B82F6;">${avgBerakhlak.toFixed(2)} <span style="font-size:10px;color:#64748B">/ 5</span></div>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 9.5px; color: #94A3B8; text-transform: uppercase; margin-bottom: 2px;">Total Laporan</div>
+                <div style="font-size: 14.5px; font-weight: bold; color: #FBBF24;">${winner.reportCount} <span style="font-size:10px;color:#64748B">kegiatan</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const leaderboardTable = `
+        <div class="panel" style="margin-bottom:30px">
+          <div class="panel-head"><h3 class="panel-title">${icon("list-ordered")} Peringkat Pegawai (${fmtMonth(selBulan)})</h3></div>
+          <div class="report-wrap"><table class="report">
+            <thead>
+              <tr>
+                <th style="width: 60px; text-align: center;">Rank</th>
+                <th>Pegawai</th>
+                <th>Nilai Kinerja</th>
+                <th>Nilai BerAKHLAK</th>
+                <th>Skor Akhir</th>
+                <th>Total Laporan</th>
+                <th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${allCandidates.map((c, idx) => {
+                const isWinner = idx === 0;
+                const scorePct = Math.round((c.score / 75) * 100);
+                const avgVal = ((c.penilaian.berorientasiPelayanan || 0) + (c.penilaian.akuntabel || 0) + (c.penilaian.kompeten || 0) +
+                                (c.penilaian.harmonis || 0) + (c.penilaian.loyal || 0) + (c.penilaian.adaptif || 0) + (c.penilaian.kolaboratif || 0)) / 7;
+                                
+                let statusInfo = "";
+                if (idx > 0 && c.score === winner.score) {
+                  statusInfo = `<span style="font-size:11px;color:var(--color-text-muted)">Kalah Tiebreaker</span>`;
+                } else if (isWinner && allCandidates.length > 1 && allCandidates[1].score === winner.score) {
+                  const runner = allCandidates[1];
+                  if (winner.reportCount !== runner.reportCount) {
+                    statusInfo = `<span class="badge" style="background:#FFF3E0;color:#E65100;font-size:10.5px">Aktivitas Terbanyak</span>`;
+                  } else if (winner.earliestReport !== runner.earliestReport) {
+                    statusInfo = `<span class="badge" style="background:#E0F2FE;color:#0369A1;font-size:10.5px">Input Tercepat</span>`;
+                  } else if (winner.prevWins !== runner.prevWins) {
+                    statusInfo = `<span class="badge" style="background:#F3E8FF;color:#6B21A8;font-size:10.5px">Pemerataan Kemenangan</span>`;
+                  } else {
+                    statusInfo = `<span class="badge" style="background:#E2E8F0;color:#475569;font-size:10.5px">Pemilihan Acak</span>`;
+                  }
+                } else if (isWinner) {
+                  statusInfo = `<span class="badge" style="background:#E7F4EC;color:var(--color-success);font-size:10.5px">Skor Akhir Tertinggi</span>`;
+                }
+
+                return `
+                  <tr ${isWinner ? 'style="background: rgba(245, 158, 11, 0.04);"' : ""}>
+                    <td style="text-align: center; font-weight: bold; font-size: 14px;">
+                      ${isWinner ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
+                    </td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <div class="avatar small" style="${isWinner ? "background:#F59E0B" : ""}">${esc(c.user.nama.slice(0, 1).toUpperCase())}</div>
+                        <div>
+                          <div style="font-weight: 600;">${esc(c.user.nama)}</div>
+                          <div style="font-size: 10px; color: var(--color-text-muted); text-transform: uppercase;">${esc(c.user.role.replace("_", " "))}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>${c.penilaian.nilaiKinerja}</td>
+                    <td>${avgVal.toFixed(1)} <span style="font-size:11px;color:var(--color-text-muted)">/ 5</span></td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div style="font-weight: bold; width: 35px;">${c.score}</div>
+                        <div style="flex:1; background: var(--color-border); height: 6px; border-radius: 3px; min-width:60px">
+                          <div style="background: ${isWinner ? "#F59E0B" : "var(--color-primary)"}; width: ${scorePct}%; height: 100%; border-radius: 3px;"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>${c.reportCount} kegiatan</td>
+                    <td>${statusInfo}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table></div>
+        </div>
+      `;
+
+      const pastWinnersHtml = [];
+      const now = new Date();
+      const monthsHistory = [];
+      for (let i = 1; i <= 6; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        monthsHistory.push(d.toISOString().slice(0, 7));
+      }
+      
+      monthsHistory.forEach(m => {
+        const pastRes = getWinnerForMonth(m);
+        if (pastRes) {
+          const w = pastRes.winner;
+          pastWinnersHtml.push(`
+            <div class="panel" style="padding:12px; display:flex; align-items:center; gap:10px; min-width:220px; flex:1; background:#fff; border-radius:10px; border:1px solid var(--color-border);">
+              <div class="avatar small" style="background:var(--color-primary-light); width:35px; height:35px; font-size:14px; font-weight:bold; color:#fff;">${esc(w.user.nama.slice(0, 1).toUpperCase())}</div>
+              <div>
+                <div style="font-size:10px; font-weight:bold; color:var(--color-primary)">${fmtMonth(m)}</div>
+                <div style="font-weight:600; font-size:12.5px; color:var(--color-text);">${esc(w.user.nama)}</div>
+                <div style="font-size:10px; color:var(--color-text-muted)">Skor: ${w.score} | ${w.reportCount} Laporan</div>
+              </div>
+            </div>
+          `);
+        }
+      });
+      
+      const historySection = pastWinnersHtml.length === 0 ? "" : `
+        <div style="margin-top:30px">
+          <h3 class="panel-title" style="margin-bottom:15px">${icon("history")} Galeri Pemenang Sebelumnya</h3>
+          <div style="display:flex; gap:15px; flex-wrap:wrap">
+            ${pastWinnersHtml.join("")}
+          </div>
+        </div>
+      `;
+
+      return `
+        ${sectionHead("Penghargaan", "Employee of the Month", `Apresiasi pencapaian kinerja terbaik dan penerapan nilai BerAKHLAK pegawai BPS Kabupaten Puncak periode ${fmtMonth(selBulan)}.`)}
+        <div style="margin-bottom:20px">${selectHtml}</div>
+        ${heroCard}
+        ${leaderboardTable}
+        ${historySection}
+      `;
+    }
+
     function openPenilaianModal(mode, userOrPenilaian) {
       let form;
       if (mode === "add") {
@@ -2533,6 +2811,7 @@
       else if (STATE.tab === "lapor" && role === "pegawai") el.innerHTML = renderLaporTab();
       else if (STATE.tab === "penilaian" && ["admin", "penilai"].includes(role)) el.innerHTML = renderPenilaianTab();
       else if (STATE.tab === "rekap") el.innerHTML = renderRekapTab();
+      else if (STATE.tab === "eotm") el.innerHTML = renderEotmTab();
       else if (STATE.tab === "nilaiku" && ["admin", "ketua_tim", "pegawai"].includes(role)) el.innerHTML = renderNilaikuTab();
       else if (STATE.tab === "anggota" && ["admin", "ketua_tim"].includes(role)) el.innerHTML = renderAnggotaTab();
       else {
@@ -2772,6 +3051,7 @@
       else if (el.id === "filter-sampai") { STATE.filterSampaiTanggal = el.value; renderContent(); }
       else if (el.id === "pen-filter-bulan") { STATE.filterBulan = el.value; renderContent(); }
       else if (el.id === "lapor-bulan-select") { STATE.laporBulan = el.value; renderContent(); }
+      else if (el.id === "eotm-bulan-select") { STATE.eotmBulan = el.value; renderContent(); }
     });
 
     let __searchDebounce = null;
