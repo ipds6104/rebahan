@@ -18,7 +18,7 @@
    ===================================================================== */
 
 // ID folder Google Drive tempat menyimpan file bukti dukung (WAJIB diisi)
-const DRIVE_FOLDER_ID = '1R3IMVaNRJePMidiffq6iJco6sKcEGA9M';
+const DRIVE_FOLDER_ID = '1tZ5vZgXWsut0nVaNcf92_7LAdHi3WxK5';
 
 // Masa berlaku sesi login (dalam milidetik). Default: 1 hari.
 const SESSION_DURATION_MS = 1 * 24 * 60 * 60 * 1000;

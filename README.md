@@ -4,7 +4,7 @@ Aplikasi manajemen rencana kinerja dan laporan aktivitas harian pegawai BPS Kabu
 
 ## 🔗 Tautan Sumber Daya
 - **Google Sheets (Database)**: [Buka Google Sheets Kinerja](https://docs.google.com/spreadsheets/d/189__cVOn0ZebNsdwxvzeqS_b1p9D2L_Ck7hR5sincc0/edit?gid=1291082304#gid=1291082304)
-- **Google Drive (Penyimpanan Bukti Dukung)**: [Buka Folder Google Drive](https://drive.google.com/drive/u/3/folders/1R3IMVaNRJePMidiffq6iJco6sKcEGA9M)
+- **Google Drive (Penyimpanan Bukti Dukung)**: [Buka Folder Google Drive](https://drive.google.com/drive/folders/1tZ5vZgXWsut0nVaNcf92_7LAdHi3WxK5?hl=ID)
 
 ---
 
