@@ -266,6 +266,11 @@ function doGet(e) {
     const action = e.parameter.action;
     const token = e.parameter.token;
 
+    if (action === "bootstrap") return jsonResponse(handleBootstrap(token));
+    if (action === "refresh") {
+      const activeUser = requireUser(token);
+      return jsonResponse(handleRefresh(activeUser));
+    }
     if (action === "referensi") return jsonResponse(REFERENSI);
     if (action === "status") {
       const users = sheetToObjects(SHEETS.USERS);
@@ -782,4 +787,46 @@ function handleDeletePenilaian(body) {
   const ok = deleteRowById(SHEETS.PENILAIAN, body.id);
   if (!ok) throw new Error("Penilaian tidak ditemukan.");
   return { ok: true };
+}
+
+function handleBootstrap(token) {
+  const users = sheetToObjects(SHEETS.USERS);
+  const result = {
+    hasUsers: users.length > 0,
+    referensi: REFERENSI,
+    user: null,
+    data: null
+  };
+  
+  if (token) {
+    const session = sheetToObjects(SHEETS.SESSIONS).find(s => s.token === token);
+    if (session && Date.now() <= Number(session.expiresAt)) {
+      const activeUser = users.find(u => u.id === session.userId);
+      if (activeUser) {
+        result.user = sanitizeUser(activeUser);
+        const isTeamMember = ["admin", "ketua_tim", "penilai", "pegawai"].indexOf(activeUser.role) !== -1;
+        if (isTeamMember) {
+          result.data = {
+            users: users.map(sanitizeUser),
+            aktivitas: sheetToObjects(SHEETS.AKTIVITAS).map(normalizeAktivitasOut),
+            laporan: sheetToObjects(SHEETS.LAPORAN).map(normalizeLaporanOut),
+            penilaian: sheetToObjects(SHEETS.PENILAIAN).map(normalizePenilaianOut),
+            pengajuan: sheetToObjects(SHEETS.PENGAJUAN)
+          };
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function handleRefresh(activeUser) {
+  const users = sheetToObjects(SHEETS.USERS);
+  return {
+    users: users.map(sanitizeUser),
+    aktivitas: sheetToObjects(SHEETS.AKTIVITAS).map(normalizeAktivitasOut),
+    laporan: sheetToObjects(SHEETS.LAPORAN).map(normalizeLaporanOut),
+    penilaian: sheetToObjects(SHEETS.PENILAIAN).map(normalizePenilaianOut),
+    pengajuan: sheetToObjects(SHEETS.PENGAJUAN)
+  };
 }

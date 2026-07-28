@@ -1174,10 +1174,8 @@
     };
 
     async function refreshAll() {
-      const [users, aktivitas, laporan, penilaian, pengajuan] = await Promise.all([
-        apiGet("users"), apiGet("aktivitas"), apiGet("laporan"), apiGet("penilaian"), apiGet("pengajuan"),
-      ]);
-      DATA = { users, aktivitas, laporan, penilaian, pengajuan };
+      const res = await apiGet("refresh");
+      DATA = res;
     }
 
     function uid(prefix) { return prefix + "_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
@@ -2790,24 +2788,22 @@
         return;
       }
       try {
-        const [referensi, status] = await Promise.all([apiGet("referensi"), apiGet("status")]);
-        REFERENSI = referensi;
+        const boot = await apiGet("bootstrap");
+        REFERENSI = boot.referensi;
         tagReferensi();
-        BOOTSTRAP_HAS_USERS = !!status.hasUsers;
+        BOOTSTRAP_HAS_USERS = !!boot.hasUsers;
+        
+        if (boot.user && boot.data) {
+          CURRENT_USER = boot.user;
+          DATA = boot.data;
+        } else {
+          TOKEN = ""; saveToken(""); CURRENT_USER = null;
+        }
       } catch (e) {
         document.getElementById("app").innerHTML = `<div class="login-wrap"><div class="login-card">
       <div class="modal-hint" style="background:#FDECEC;color:var(--color-danger)">Gagal terhubung ke backend: ${esc(e.message)}. Periksa APPS_SCRIPT_URL dan koneksi internet Anda.</div>
       </div></div>`;
         return;
-      }
-
-      if (TOKEN) {
-        try {
-          CURRENT_USER = await apiGet("me");
-          await refreshAll();
-        } catch (e) {
-          TOKEN = ""; saveToken(""); CURRENT_USER = null;
-        }
       }
       render();
     }
