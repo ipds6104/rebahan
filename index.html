@@ -1088,21 +1088,15 @@
       border-bottom: 2px solid #F59E0B;
       color: #FFFFFF;
       overflow: hidden;
-      white-space: nowrap;
       height: 38px;
       display: flex;
       align-items: center;
       position: relative;
       z-index: 10;
-      padding-left: 130px;
     }
-    
-    .eotm-ticker-container::before {
-      content: "⭐ APRESIASI";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
+
+    .eotm-ticker-label {
+      flex-shrink: 0;
       background: #F59E0B;
       color: #0F172A;
       font-family: var(--font-display);
@@ -1110,17 +1104,31 @@
       font-weight: 700;
       display: flex;
       align-items: center;
+      height: 100%;
       padding: 0 16px;
-      box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
-      z-index: 12;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+      z-index: 2;
       letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .eotm-ticker-viewport {
+      overflow: hidden;
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: center;
     }
 
     .eotm-ticker-track {
-      display: inline-block;
-      animation: eotm-marquee 30s linear infinite;
+      display: flex;
+      align-items: center;
+      width: max-content;
+      white-space: nowrap;
+      animation: eotm-marquee 28s linear infinite;
+      will-change: transform;
     }
-    
+
     .eotm-ticker-track:hover {
       animation-play-state: paused;
     }
@@ -1133,7 +1141,7 @@
     }
 
     @keyframes eotm-marquee {
-      0% { transform: translateX(0); }
+      0%   { transform: translateX(0); }
       100% { transform: translateX(-50%); }
     }
   </style>
@@ -2449,8 +2457,11 @@
       
       return `
         <div class="eotm-ticker-container">
-          <div class="eotm-ticker-track">
-            ${marqueeContent}
+          <div class="eotm-ticker-label">⭐ APRESIASI</div>
+          <div class="eotm-ticker-viewport">
+            <div class="eotm-ticker-track">
+              ${marqueeContent}
+            </div>
           </div>
         </div>
       `;
