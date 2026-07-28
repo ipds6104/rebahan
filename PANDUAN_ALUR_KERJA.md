@@ -9,8 +9,8 @@ Dokumen ini menjelaskan alur kerja dari perencanaan aktivitas, pelaporan harian 
 
 Untuk memahami alur kerja, berikut adalah hak akses dari masing-masing peran di aplikasi:
 *   **Admin**: Mengelola pengguna & peran, serta memiliki semua hak akses Ketua Tim & Penilai.
-*   **Ketua Tim**: Membuat aktivitas program, menugaskan pegawai, dan memantau capaian progres tim.
-*   **Penilai**: Melakukan penilaian bulanan (Kinerja & nilai BerAKHLAK ASN) untuk seluruh pegawai yang sudah mengajukan laporan.
+*   **Ketua Tim**: Membuat aktivitas program, menugaskan pegawai, dan memantau capaian progres tim. Ketua Tim tidak didelegasikan tugas pribadi dan tidak mendapatkan penilaian.
+*   **Penilai**: Melakukan penilaian bulanan (Kinerja & nilai BerAKHLAK ASN) untuk seluruh pegawai (role pegawai) yang sudah mengajukan laporan.
 *   **Pegawai**: Melihat aktivitas yang ditugaskan, mengirimkan laporan harian beserta bukti dukung, mengajukan kunci laporan bulanan, dan melihat rekap penilaian bulanan miliknya.
 *   **Tamu**: Pengguna baru yang mendaftar secara mandiri dan sedang menunggu persetujuan Admin.
 
@@ -92,8 +92,8 @@ Di akhir bulan, Penilai melakukan evaluasi berdasarkan pengajuan laporan pegawai
 
 ---
 
-### 4. Tahap Umpan Balik (Oleh: Pegawai / Ketua Tim)
-Setiap pegawai (termasuk Ketua Tim) dapat melihat hasil penilaian penilai secara transparan:
+### 4. Tahap Umpan Balik (Oleh: Pegawai)
+Setiap pegawai dapat melihat hasil penilaian penilai secara transparan:
 1.  Buka tab **Nilai Saya**.
 2.  Pilih **Bulan** penilaian yang ingin dilihat.
 3.  Pegawai dapat melihat:
