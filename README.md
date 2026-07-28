@@ -82,15 +82,16 @@ Menyimpan data penilaian kinerja bulanan dan nilai karakter BerAKHLAK per pegawa
 
 ---
 
-## 🔒 Kode Google Apps Script (`Code.gs`)
+## 🔒 Kode Google Apps Script (`Code.js`)
 
-Seluruh logika backend Google Apps Script telah dipisahkan ke dalam berkas khusus: [Code.gs](file:///home/ihza/Projects/rebahan/Code.gs).
+Seluruh logika backend Google Apps Script telah dipisahkan ke dalam berkas khusus: [Code.js](file:///home/ihza/Projects/rebahan/Code.js).
 
 ### Cara Menggunakan:
 1. Buka Google Sheets Anda, lalu klik menu **Extensions > Apps Script**.
-2. Salin seluruh isi kode dari berkas [Code.gs](file:///home/ihza/Projects/rebahan/Code.gs) di repositori ini, lalu tempel (*paste*) ke dalam editor Google Apps Script.
+2. Salin seluruh isi kode dari berkas [Code.js](file:///home/ihza/Projects/rebahan/Code.js) di repositori ini, lalu tempel (*paste*) ke dalam editor Google Apps Script.
 3. Pastikan Anda telah memasukkan ID Folder Google Drive Anda pada variabel `DRIVE_FOLDER_ID` di baris atas script.
 4. Klik tombol **Deploy > New Deployment**, pilih tipe **Web App**, jalankan sebagai **Me (email Anda)**, dan atur hak akses ke **Anyone**.
+
 
 
 ---
