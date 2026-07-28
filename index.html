@@ -1127,12 +1127,7 @@
       align-items: center;
       width: max-content;
       white-space: nowrap;
-      animation: eotm-marquee 28s linear infinite;
       will-change: transform;
-    }
-
-    .eotm-ticker-track:hover {
-      animation-play-state: paused;
     }
 
     .eotm-ticker-track span {
@@ -2900,6 +2895,7 @@
       }
       app.innerHTML = renderShell();
       renderContent();
+      initTickerAnimation();
     }
     function renderContent() {
       const el = document.getElementById("content");
@@ -2921,6 +2917,48 @@
       afterRender();
     }
     function afterRender() { if (window.lucide) lucide.createIcons(); }
+
+    let _tickerRafId = null;
+    function initTickerAnimation() {
+      // Cancel any existing animation loop before starting a new one
+      if (_tickerRafId) { cancelAnimationFrame(_tickerRafId); _tickerRafId = null; }
+
+      const track = document.querySelector('.eotm-ticker-track');
+      const viewport = document.querySelector('.eotm-ticker-viewport');
+      if (!track || !viewport) return;
+
+      // Wait one frame so the browser has painted and we can read real widths
+      requestAnimationFrame(() => {
+        const contentWidth = track.scrollWidth / 2; // two copies, so one copy = half
+        const viewportWidth = viewport.offsetWidth;
+
+        // Start fully off-screen to the right
+        let pos = viewportWidth;
+        const speed = 55; // pixels per second
+        let lastTs = null;
+        let paused = false;
+
+        track.style.transform = `translateX(${pos}px)`;
+
+        function step(ts) {
+          if (!paused) {
+            if (lastTs !== null) {
+              pos -= speed * (ts - lastTs) / 1000;
+              // Seamless loop: when first copy has scrolled fully off to the left, reset
+              if (pos <= -contentWidth) pos += contentWidth;
+              track.style.transform = `translateX(${pos}px)`;
+            }
+            lastTs = ts;
+          }
+          _tickerRafId = requestAnimationFrame(step);
+        }
+
+        track.addEventListener('mouseenter', () => { paused = true; });
+        track.addEventListener('mouseleave', () => { paused = false; lastTs = null; });
+
+        _tickerRafId = requestAnimationFrame(step);
+      });
+    }
 
     function withBusy(el, fn, opts) {
       opts = opts || {};
