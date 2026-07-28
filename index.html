@@ -1667,7 +1667,7 @@
         const alreadyRated = new Set((DATA.penilaian || []).filter(p => p.bulan === nowMonth).map(p => p.pegawaiId));
         const submitted = (DATA.pengajuan || []).filter(p => p.bulan === nowMonth && p.status === "diajukan").map(p => p.pegawaiId);
         const waitingRating = submitted.filter(id => !alreadyRated.has(id));
-        const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(Boolean);
+        const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(u => u && u.role === "pegawai");
 
         const waitingHtml = waitingUsers.length === 0
           ? `<div style="padding:24px 0;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
@@ -1716,7 +1716,7 @@
         const alreadyRated = new Set((DATA.penilaian || []).filter(p => p.bulan === nowMonth).map(p => p.pegawaiId));
         const submitted = (DATA.pengajuan || []).filter(p => p.bulan === nowMonth && p.status === "diajukan").map(p => p.pegawaiId);
         const waitingRating = submitted.filter(id => !alreadyRated.has(id));
-        const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(Boolean);
+        const waitingUsers = waitingRating.map(id => DATA.users.find(u => u.id === id)).filter(u => u && u.role === "pegawai");
 
         const waitingHtml = waitingUsers.length === 0
           ? `<div style="padding:24px 0;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center">
@@ -2169,7 +2169,7 @@
       if (!STATE.filterBulan) STATE.filterBulan = new Date().toISOString().slice(0, 7);
       
       const allEvaluated = DATA.penilaian.filter(p => p.bulan === STATE.filterBulan);
-      const eligibleUsers = DATA.users.filter(u => u.role === "pegawai" || u.role === "ketua_tim");
+      const eligibleUsers = DATA.users.filter(u => u.role === "pegawai");
       
       const evaluatedList = [];
       const notEvaluatedList = [];
