@@ -2424,12 +2424,9 @@
     }
 
     function renderEotmTicker() {
-      const now = new Date();
-      const months = [];
-      for (let i = 0; i < 3; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        months.push(d.toISOString().slice(0, 7));
-      }
+      const months = Array.from(new Set((DATA.penilaian || []).map(p => p.bulan)))
+        .sort((a, b) => b.localeCompare(a))
+        .slice(0, 3);
       
       const winners = [];
       months.forEach(m => {
@@ -2439,11 +2436,14 @@
         }
       });
       
-      if (winners.length === 0) return "";
-      
-      const tickerText = winners.map(w => {
-        return `🏆 <strong>Employee of The Month ${w.monthStr}</strong>: <span style="color:#FFF3E0;font-weight:600">${esc(w.name)}</span> (Skor Akhir: ${w.score}) 🎉`;
-      }).join(" &nbsp;&nbsp;&bull;&nbsp;&nbsp; ");
+      let tickerText = "";
+      if (winners.length > 0) {
+        tickerText = winners.map(w => {
+          return `🏆 <strong>Employee of The Month ${w.monthStr}</strong>: <span style="color:#FFF3E0;font-weight:600">${esc(w.name)}</span> (Skor Akhir: ${w.score}) 🎉`;
+        }).join(" &nbsp;&nbsp;&bull;&nbsp;&nbsp; ");
+      } else {
+        tickerText = `✨ <strong>Selamat Datang di Portal Kinerja BPS Kabupaten Puncak</strong> &nbsp;&bull;&nbsp; Mari berikan penilaian kinerja terbaik dan nilai karakter BerAKHLAK bulanan pegawai untuk memunculkan Employee of The Month di sini! ⭐`;
+      }
       
       const marqueeContent = `<span>${tickerText}</span><span>${tickerText}</span>`;
       
