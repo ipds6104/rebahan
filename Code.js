@@ -111,10 +111,17 @@ function updateObjectById(sheetName, id, patch) {
   if (rowIdx === -1) return null;
   const sheet = getSheet(sheetName);
   const headers = HEADERS[sheetName];
-  headers.forEach((h, colIdx) => {
-    if (patch[h] !== undefined) sheet.getRange(rowIdx, colIdx + 1).setValue(patch[h]);
+  const range = sheet.getRange(rowIdx, 1, 1, headers.length);
+  const values = range.getValues()[0];
+  
+  headers.forEach((h, i) => {
+    if (patch[h] !== undefined) {
+      values[i] = patch[h];
+    }
   });
-  const values = sheet.getRange(rowIdx, 1, 1, headers.length).getValues()[0];
+  
+  range.setValues([values]);
+  
   const result = {};
   const dateCols = ["tanggal", "periodeMulai", "periodeSelesai", "createdAt"];
   headers.forEach((h, i) => {
